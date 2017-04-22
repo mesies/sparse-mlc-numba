@@ -1,0 +1,23 @@
+\begin{thebibliography}{1}
+
+\bibitem{extreme_MLC_omar}
+{\em Multiclass-Multilabel Classification with More Classes than Examples}.
+  AISTATS, 2010.
+
+\bibitem{extreme_MLC_rep}
+Y.~P. M.~V. Kush~Bhatia, Himanshu~Jain.
+\newblock The extreme classification repository: Multi-label datasets and code.
+
+\bibitem{MLC_madrid}
+J.~Read.
+\newblock Multi-label classification.
+\newblock Technical report, Universidad Carlos III de Madrid. Department of
+  Signal Theory and Communications, 2013.
+
+\bibitem{MLC_finland}
+J.~Read.
+\newblock Multi-label classification.
+\newblock Technical report, Department of Information and Computer Science
+  Helsinki, Finland, 2015.
+
+\end{thebibliography}
