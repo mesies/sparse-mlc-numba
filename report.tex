@@ -100,19 +100,22 @@
 	\section*{Notation}
 
 	\begin{itemize}
-		\item Lowercase bold letter denotes a n * k matrix where n is rows and k is columns :  $\textbf{w} \in  {\Bbb R}^{n * k}$
+		\item Lowercase bold letter denotes a n * k matrix where n is rows and k is columns :  $\textbf{w} \in  {\mathbb R}^{n * k}$
 		
-		\item Lowercase bold letter with subscript denotes the n-nth row of the matrix : $\textbf{x}_{n} \in  {\Bbb R}^{k}$
+		\item Lowercase bold letter with subscript denotes the n-nth row of the matrix : $\textbf{x}_{n} \in  {\mathbb R}^{k}$
 				
-		\item Lowercase letter will denote a real number unless stated otherwise	:	$x \in {\Bbb R}$
+		\item Lowercase letter will denote a real number unless stated otherwise	:	$x \in {\mathbb R}$
 		
 		\item Uppercase Italics letter denotes a set : $\textit{T} $
 		
-		\item The letter $\hat{y}$ will denote predicted labels.
+		\item The letter $\hat{y}$ will denote predicted label(s).
 		
-		\item The letter $X$ wiil denote train data and the letter $Y$ train data labels.
+		\item The letter $X$ will denote the train data matrix which will have its first column, full of ones in addition to other data, $X \in {\mathbb R}^{N * K}$ with $N$ the number of instances and $K$ the number of features.
 		
-		\item The letter $h$ will denote a classifier function $h(\textbf{x}) = \textbf{y}$  
+		\item The letter $Y$ will denote train data true labels.
+		
+		\item $sigm(x) \triangleq \frac{1}{1 + exp(x)}$
+		%TODO Fill gradually
 		
 
 	\end{itemize}
@@ -146,9 +149,42 @@
 	Each classifier is trained using results from previous classifiers in a chain, the order which labels are predicted is %for now
 	arbitary. There are more complicated schemes that aim to optimise the order that labels are predicted such as Bayes Optimal CC \cite{MLC_finland}.
 	
+	\section*{Binary Logistic Regression Classifier}
+	Logistic Regression Classifier is a  classification algorithm described by these expressions (implying two classes): 
+	
+	$ \hat{y} = \underset{y \in \{0,1\} }{argmax}\  p(y|\textbf{x})
+	$
+	 where $
+	 p(y = 1 | \textbf{x} )= sigm(\textbf{w}^T \textbf{x} )
+	 $
+	
+	The joint distribution of both classes is $p(Y |X,\textbf{w}) = \prod_{n=1}^{N} \ p(Y_{n} | \textbf{x}_{n}, \textbf{w} )$
+	 so the logarithmic likelihood is $
+	 L(\textbf{w}) = \sum_{n}^{N} \ Y_n \ log(sigm(\textbf{w}^T \textbf{x}_n)) + (1-Y_n)\ log(1 - sigm(\textbf{w}^T \textbf{x}_n))
+	 $.
+	 In order to find optimal $\textbf{w}$ its cost function $-L(\textbf{w})$ will be optimized utilising stochastic gradient descent.
+	 
+	 \subsection*{Optimization of the cost function}
+	 
+	 Gradient descend is an iterative optimization algorithm which in each iteration the weights are updated according to the formula:
+	 $\textbf{w}^{(k+1)} \leftarrow \textbf{w}^{k} + l\ \nabla L(\textbf{w}^{(k)}) \ $ where $l$ is the learning rate. 
+	 
+	 The computational complexity of calculating $\nabla L$ is increasing according to the number of training instances. In order to generalize well in any machine learning algorithm, a great number of training examples is needed and gradient descend becomes computationally prohibitive.
+	 
+	 Stochastic gradient descend is a variation of gradient descend as its name suggests, uses sampling in order to circumvent the computational cost.
+	 
+	 
+	 $\nabla_{w} L(\textbf{w}) = - \textbf{x}^{T}\textbf{t}+\textbf{x}^{T}\textbf{x}\textbf{w} $
+	 
+	 Supposing a batch $B$ choosen randomly from the training data with a size of $b$
+	 
+	 The update procedure becomes like this : 
+	 $B \leftarrow choose b training instances from each update$
+	 $\textbf{w}^{(k+1)} \leftarrow \textbf{w}^{k} + l\ \frac{1}{B} \sum_{b=0}^{B-1} \nabla L(\textbf{w}^{(k)},\textbf{x}(b)) \ $
+	 
 	\section*{Prototype Structure and Documentation}
 	\subsection*{General Structure}
-	The prototype consists of three main parts : (a) Binary Classification Algorithm, (b) Multy Label Classifiactation Interface (c) Score function.  More specifically :
+	The prototype consists of three main parts : (a) Binary Classification Algorithm, (b) Multi-Label Classifiactation Interface (c) Score function.  More specifically :
 
 	\subparagraph{a}Firstly, the implementation of any Binary Classification Algorithm will be required: multiclass logistic regression was chosen for simplicity. 
 	The sparsity of the training data will be put into account while implementing the algorithm and stochastic gradient descent will be used for the optimization of the loss function.
