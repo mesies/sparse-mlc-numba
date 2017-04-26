@@ -179,12 +179,12 @@
 	 Supposing a batch $B$ choosen randomly from the training data with a size of $b$
 	 
 	 The update procedure becomes like this : 
-	 $B \leftarrow choose b training instances from each update$
+	 $B \leftarrow choose\  b \ training \ instances\  from\  each \ update$
 	 $\textbf{w}^{(k+1)} \leftarrow \textbf{w}^{k} + l\ \frac{1}{B} \sum_{b=0}^{B-1} \nabla L(\textbf{w}^{(k)},\textbf{x}(b)) \ $
 	 
 	\section*{Prototype Structure and Documentation}
 	\subsection*{General Structure}
-	The prototype consists of three main parts : (a) Binary Classification Algorithm, (b) Multi-Label Classifiactation Interface (c) Score function.  More specifically :
+	The prototype consists of three main parts : (a) Binary Classification Algorithm, (b) Multi-Label Classification Interface (c) Score function.  More specifically :
 
 	\subparagraph{a}Firstly, the implementation of any Binary Classification Algorithm will be required: multiclass logistic regression was chosen for simplicity. 
 	The sparsity of the training data will be put into account while implementing the algorithm and stochastic gradient descent will be used for the optimization of the loss function.
