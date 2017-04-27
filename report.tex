@@ -115,6 +115,7 @@
 		\item The letter $Y$ will denote train data true labels.
 		
 		\item $sigm(x) \triangleq \frac{1}{1 + exp(x)}$
+		
 		%TODO Fill gradually
 		
 
@@ -158,9 +159,9 @@
 	 p(y = 1 | \textbf{x} )= sigm(\textbf{w}^T \textbf{x} )
 	 $
 	
-	The joint distribution of both classes is $p(Y |X,\textbf{w}) = \prod_{n=1}^{N} \ p(Y_{n} | \textbf{x}_{n}, \textbf{w} )$
+	The joint distribution of both classes is $p(Y |X,\textbf{w}) = \prod_{n=1}^{N} \ p({y}_{n} | \textbf{x}_{n}, \textbf{w} )$
 	 so the logarithmic likelihood is $
-	 L(\textbf{w}) = \sum_{n}^{N} \ Y_n \ log(sigm(\textbf{w}^T \textbf{x}_n)) + (1-Y_n)\ log(1 - sigm(\textbf{w}^T \textbf{x}_n))
+	 L(\textbf{w}) = \sum_{n}^{N} \ y_n \ log(sigm(\textbf{w}^T \textbf{x}_n)) + (1-y_n)\ log(1 - sigm(\textbf{w}^T \textbf{x}_n))
 	 $.
 	 In order to find optimal $\textbf{w}$ its cost function $-L(\textbf{w})$ will be optimized utilising stochastic gradient descent.
 	 
@@ -174,19 +175,19 @@
 	 Stochastic gradient descend is a variation of gradient descend as its name suggests, uses sampling in order to circumvent the computational cost.
 	 
 	 
-	 $\nabla_{w} L(\textbf{w}) = - \textbf{x}^{T}\textbf{t}+\textbf{x}^{T}\textbf{x}\textbf{w} $
+	 $\nabla_{w} L(\textbf{w}) = - \textbf{x}^{T}\textbf{y}+\textbf{x}^{T}\textbf{x}\textbf{w} $
 	 
-	 Supposing a batch $B$ choosen randomly from the training data with a size of $b$
+	 Supposing a batch $B$ choosen randomly from the training data with a size of $B$
 	 
 	 The update procedure becomes like this : 
-	 $B \leftarrow choose\  b \ training \ instances\  from\  each \ update$
-	 $\textbf{w}^{(k+1)} \leftarrow \textbf{w}^{k} + l\ \frac{1}{B} \sum_{b=0}^{B-1} \nabla L(\textbf{w}^{(k)},\textbf{x}(b)) \ $
+	 $\textbf{x}(b) \leftarrow randomly\ choose\  b \ training \ instances\ $(b is a list of B random indexes)
+	 $\textbf{w}^{(k+1)} \leftarrow \textbf{w}^{k} + l\ \nabla_{w} L(\textbf{w}^{(k)}, \textbf{x}(b),\textbf{y}(b))$
 	 
 	\section*{Prototype Structure and Documentation}
 	\subsection*{General Structure}
 	The prototype consists of three main parts : (a) Binary Classification Algorithm, (b) Multi-Label Classification Interface (c) Score function.  More specifically :
 
-	\subparagraph{a}Firstly, the implementation of any Binary Classification Algorithm will be required: multiclass logistic regression was chosen for simplicity. 
+	\subparagraph{a}Firstly, the implementation of any Binary Classification Algorithm will be required: binary logistic regression was chosen for simplicity. 
 	The sparsity of the training data will be put into account while implementing the algorithm and stochastic gradient descent will be used for the optimization of the loss function.
 	%TODO Another section for more specifics?
 	
