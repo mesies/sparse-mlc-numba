@@ -1,7 +1,6 @@
 import sklearn as sk
 import pandas as pd
 import numpy as np
-from scipy.sparse import csr_matrix
 from helpers import load_mlc_dataset
 
 #   Options
@@ -11,12 +10,17 @@ DATASET_TEST_SET_FILENAME = "delicious_tstSplit.txt"
 
 #   Debug Options
 DEBUG = 1
-DEBUG_DATASET_SIZE = 50
+DEBUG_DATASET_SIZE = int(50)
 
 # 1. Load dataset
 #   1.1 Load data from delicious dataset, also use sklearn's sparse data structures.
 X, y, header_info = load_mlc_dataset(DATASET_FILENAME,
                                      header=True)
+
+DATASET_SIZE = int(header_info[0])
+FEATURE_NUMBER = int(header_info[1])
+LABEL_NUMBER = int(header_info[2])
+
 #   1.2 Split into train/test sets according to delicious_trSplit.txt and delicious_tstSplit.txt, both files
 #       contain indexes.
 
@@ -28,15 +32,16 @@ f2 = open(DATASET_TEST_SET_FILENAME)
 test_ind = np.loadtxt(fname=f2, delimiter=" ", dtype=int)
 f2.close()
 
-print(type(y))
-#TODO problem -> y is a list
+#Normalize train and test indexes
+train_ind = train_ind - 1
+test_ind = test_ind - 1
 
 if DEBUG == 1:
-    X_train = X[train_ind[:, 0]]
-    X_test = X[test_ind[:, 0]]
+    X_train = X[train_ind[:DEBUG_DATASET_SIZE, 0]]
+    X_test = X[test_ind[:DEBUG_DATASET_SIZE, 0]]
 
-    y_train = y[train_ind[:, 0]]
-    y_test = y[test_ind[:, 0]]
+    y_train = y[train_ind[:DEBUG_DATASET_SIZE, 0]]
+    y_test = y[test_ind[:DEBUG_DATASET_SIZE, 0]]
 else:
     X_train = X[train_ind[:, 0]]
     X_test = X[test_ind[:, 0]]
@@ -44,7 +49,6 @@ else:
     y_train = y[train_ind[:, 0]]
     y_test = y[test_ind[:, 0]]
 
-print(X_train[19])
 # 2. Implement Binary Logistic Regression Classifier
 #   2.1 Code likelihood
 #   2.2 Code Stochastic Gradient Descent with regards to dataset sparsity
