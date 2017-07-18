@@ -32,15 +32,15 @@ f2 = open(DATASET_TEST_SET_FILENAME)
 test_ind = np.loadtxt(fname=f2, delimiter=" ", dtype=int)
 f2.close()
 
-#Normalize train and test indexes
+# Normalize train and test indexes
 train_ind = train_ind - 1
 test_ind = test_ind - 1
 
 if DEBUG == 1:
-    X_train = X[train_ind[:DEBUG_DATASET_SIZE, 0]]
+    X_train = X[train_ind[:(DEBUG_DATASET_SIZE * 4), 0]]
     X_test = X[test_ind[:DEBUG_DATASET_SIZE, 0]]
 
-    y_train = y[train_ind[:DEBUG_DATASET_SIZE, 0]]
+    y_train = y[train_ind[:DEBUG_DATASET_SIZE * 4, 0]]
     y_test = y[test_ind[:DEBUG_DATASET_SIZE, 0]]
 else:
     X_train = X[train_ind[:, 0]]
