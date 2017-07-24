@@ -1,6 +1,7 @@
 import math
-
+import logging
 import numpy as np
+import helpers
 
 """
 This is an implementation of Linear Regression with SGD solver aiming at performance when training
@@ -9,49 +10,50 @@ examples matrix is a sparse matrix
 
 
 class MLC_LinearRegression:
-    def __init__(self, X_train, y_train, l):
-        self.X_train = X_train
-        self.y_train = y_train
-        self.l = l
-        self.w = np.array([0, 0])
+    def __init__(self, learning_rate=0.001, iterations=1000, debug=True):
+
+        self.l = learning_rate
+        self.iterations = iterations
+        self.w = {}
+        self.debug = debug
+        self.lossHistory = []
+        if debug:
+            logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.DEBUG)
+        else:
+            logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.INFO)
 
     def fit(self, X, y):
+        logging.info("Started Fitting Dataa")
+        self.w = np.random.uniform(size=(X.shape[1],))
+        logging.debug("Commencing Gradient Check")
+        logging.debug(helpers.grad_check(X, self.w, y))
 
-        ITERATIONS = 1000
+        self.w = self.gradient_decent(X, y, epochs=self.iterations)
+        return self.w
 
-        self.w = self.gradient_decent(self, X, y, self.w, ITERATIONS)
+    def gradient_decent(self, X, y, tolerance=1e-3, epochs=10000):
+        old_loss = np.inf
+        for epoch in np.arange(0, epochs):
 
-        # Simple Gradient Descent
+            logging.info("INFO: Commencing next epoch %i", epoch)
 
-    def gradient_decent(self, X, y, w, tol=10 ^ (-3), iterations=10000):
+            gradient = helpers.gradient(X, self.w, y)
+            loss = helpers.log_likelihood(X, self.w, y)
+            self.lossHistory.append(loss)
+            logging.info("INFO: epoch #{}, loss={:.7f} , gradient={}".format(epoch + 1, loss, gradient))
 
-        L_old = np.inf
-
-        for i in range(0, iterations):
-            wt_x = np.dot(np.transpose(self.w), X)
-            sigm_wt_x = self.sigm(wt_x)
-
-            L = - np.sum(
-                y * np.log(sigm_wt_x) + (1 - y) * np.log(1 - sigm_wt_x))
-
-            if np.abs(L - L_old) < tol:
+            if np.abs(loss - old_loss) < tolerance:
                 break
+            old_loss = loss
 
-            self.w = self.w + self.l * (
-                np.dot((-(np.transpose(X))), y)
-                + np.dot(
-                    np.dot(
-                        np.transpose(X), X), self.w)
-            )
-        return w
+            self.w = self.w - self.l * gradient
+
+        return self.w
 
     def predict(self, X):
-        y = self.sigm(np.dot(np.transpose(self.w), X))
-        y = np.around(y, decimals=-1)
+        logging.info("Predicting Labels")
+        #X_train = np.c_[np.ones((X.shape[0])), X]
+        y = helpers.sigmoid(np.dot(X, self.w))
+        y = np.around(y)
         return y
 
-    def sigm(x):
-        if np.sign(x) >= 0:
-            return 1 / (1 + math.exp(-x))
-        else:
-            return math.exp(x) / (1 + math.exp(x))

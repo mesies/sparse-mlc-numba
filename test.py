@@ -35,10 +35,10 @@ logging.info(X)
 
 helpers.grad_check(X, W, y)
 weights = np.array([0.0, 0.0, 0.0])
-quick_grad_check(fun=helpers.log_likelihood, arg0=X, extra_args=(weights, y))
+#quick_grad_check(fun=helpers.log_likelihood, arg0=X, extra_args=(weights, y))
 
 old_loss = np.inf
-time = helpers.tick()
+time = helpers.tic()
 
 for epoch in np.arange(0, epochs):
     logging.info("Commencing next epoch %i", epoch)
@@ -49,7 +49,7 @@ for epoch in np.arange(0, epochs):
     gradient = helpers.gradient(X, W, y)
     loss = helpers.log_likelihood(X, W, y)
 
-    if np.abs(loss - old_loss) < (10 ** -3):
+    if np.abs(loss - old_loss) < (10 ** -4):
         break
 
     old_loss = loss
