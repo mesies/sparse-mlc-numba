@@ -1,5 +1,6 @@
 
 import autograd
+import logging
 import numpy as npp
 import math
 import time
@@ -112,20 +113,48 @@ def log_likelihood(X, W, y):
     :param y: True Categories of the training examples X
     :return: minus log likelihood
     """
+    logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.INFO)
 
     t = y
 
     xw_hat = ((-1)**(1-t)) * np.dot(X, W)
     L = -np.sum(-np.log(1 + np.exp(-xw_hat)))
-
-    return L
+    wut = np.zeros((X.shape))
+    for n in np.arange(0, X.shape[0]):
+        for k in np.arange(0, W.shape[0]):
+            wut[n][k] = X[n][k] * W[k]
+    L1 = -np.sum(-(logsumexp(-wut)))
+    print L
+    print L1
+    return L1
 
 
 def logsumexp(seq):
-    size(seq)
-    maxx = np.max(seq)
-    summ = np.exp(seq-maxx).sum()
-    return maxx + np.log(1 + summ)
+    #print np.log(1 + np.exp(-seq))
+    varr = np.c_[seq, np.zeros(seq.shape[0]).T]
+    logging.info("-wut")
+    logging.info(seq)
+    logging.info("-var")
+    logging.info(varr)
+    maxxx = np.max(varr, axis=1)
+    logging.info("max")
+    logging.info(maxxx)
+
+    #print str(maxx) + " kappa"
+    maxx = np.array([maxxx] * (varr.shape[1]))
+    logging.info("max")
+    logging.info(maxx)
+
+
+    summ = np.sum(np.exp(np.subtract(varr, maxx.T)), axis=0)
+    logging.info("summ")
+    logging.info(summ.shape)
+    logging.info(summ)
+
+    logging.info("returns")
+    logging.info(((maxxx) + np.log(summ)).shape)
+    logging.info((maxxx) + np.log(summ))
+    return (maxxx) + np.log(summ)
 
 
 

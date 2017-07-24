@@ -26,7 +26,7 @@ class MLC_LinearRegression:
         logging.info("Started Fitting Dataa")
         self.w = np.random.uniform(size=(X.shape[1],))
         logging.debug("Commencing Gradient Check")
-        logging.debug(helpers.grad_check(X, self.w, y))
+        #logging.debug(helpers.grad_check(X, self.w, y))
 
         self.w = self.gradient_decent(X, y, epochs=self.iterations)
         return self.w
@@ -40,7 +40,7 @@ class MLC_LinearRegression:
             gradient = helpers.gradient(X, self.w, y)
             loss = helpers.log_likelihood(X, self.w, y)
             self.lossHistory.append(loss)
-            logging.info("INFO: epoch #{}, loss={:.7f} , gradient={}".format(epoch + 1, loss, gradient))
+            logging.info("INFO: epoch #{}, loss={} , gradient={}".format(epoch + 1, loss, gradient))
 
             if np.abs(loss - old_loss) < tolerance:
                 break
