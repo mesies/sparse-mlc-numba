@@ -1,7 +1,6 @@
 
-import autograd
+#import autograd
 import logging
-import numpy as npp
 import math
 import time
 import numpy as np
@@ -113,50 +112,11 @@ def log_likelihood(X, W, y):
     :param y: True Categories of the training examples X
     :return: minus log likelihood
     """
-    logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.INFO)
-
-    t = y
-
-    xw_hat = ((-1)**(1-t)) * np.dot(X, W)
+    sign = (-1)**(1-y)
+    xw_hat = (sign) * np.dot(X, W)
     L = -np.sum(-np.log(1 + np.exp(-xw_hat)))
-    wut = np.zeros((X.shape))
-    for n in np.arange(0, X.shape[0]):
-        for k in np.arange(0, W.shape[0]):
-            wut[n][k] = X[n][k] * W[k]
-    L1 = -np.sum(-(logsumexp(-wut)))
-    print L
-    print L1
-    return L1
 
-
-def logsumexp(seq):
-    #print np.log(1 + np.exp(-seq))
-    varr = np.c_[seq, np.zeros(seq.shape[0]).T]
-    logging.info("-wut")
-    logging.info(seq)
-    logging.info("-var")
-    logging.info(varr)
-    maxxx = np.max(varr, axis=1)
-    logging.info("max")
-    logging.info(maxxx)
-
-    #print str(maxx) + " kappa"
-    maxx = np.array([maxxx] * (varr.shape[1]))
-    logging.info("max")
-    logging.info(maxx)
-
-
-    summ = np.sum(np.exp(np.subtract(varr, maxx.T)), axis=0)
-    logging.info("summ")
-    logging.info(summ.shape)
-    logging.info(summ)
-
-    logging.info("returns")
-    logging.info(((maxxx) + np.log(summ)).shape)
-    logging.info((maxxx) + np.log(summ))
-    return (maxxx) + np.log(summ)
-
-
+    return (L)
 
 def auto_gradient(X, W, y):
     """
@@ -179,12 +139,7 @@ def gradient(X, W, y):
     :return: Gradient
     """
     # old_grad = - (X.T.dot(y)) + (X.T.dot(X)).dot(W)
-
-    sigm_xw = sigmoid(np.dot(X, W))
-
-    neo = np.sum((sigm_xw.T - y) * X.T, axis=1)
-
-    return neo
+    return np.sum(((sigmoid(np.dot(X, W))).T - y) * X.T, axis=1)
 
 
 def gradient_precalc(X, sigm_xw, y):
@@ -207,26 +162,24 @@ def grad_check(X, W, y):
     :param W: Weight vector
     :param y: True Categories of the training examples X
     """
-    # Works but the numeric gradient is double than the actual gradient for some reason
 
     true_gradient = gradient(X, W, y)
 
-    epsilon = 1e-4
+    epsilon = 1e-6
     num_grad = np.zeros(W.shape[0])
 
     for k in np.arange(0, W.shape[0]):
-        W_tmp = W
+        W_tmp = np.array(W)
 
-        W_tmp[k] = W_tmp[k] + epsilon
+        W_tmp[k] = W_tmp[k] + (epsilon)
         Ewplus = log_likelihood(X, W_tmp, y)
 
-        W_tmp = W
+        W_tmp = np.array(W)
 
-        W_tmp[k] = W_tmp[k] - epsilon
+        W_tmp[k] = W_tmp[k] - (epsilon)
         Ewminus = log_likelihood(X, W_tmp, y)
 
-
-        num_grad[k] = np.divide((np.subtract(Ewplus, Ewminus)), np.multiply(1, epsilon))
+        num_grad[k] = np.divide((np.subtract(Ewplus, Ewminus)), np.multiply(2, epsilon))
 
     true_gradient.reshape((W.shape[0], 1))
     num_grad.reshape((W.shape[0], 1))
@@ -239,8 +192,7 @@ def grad_check(X, W, y):
 
 def plot_linreg_results(X, W, y, preds, lossHistory):
 
-
-    print("Score " + str(accuracy_score(y_true=y, y_pred=preds)))
+    #print("Score " + str(accuracy_score(y_true=y, y_pred=preds)))
 
     Y = (-W[0] - (W[1] * X)) / W[2]
 
