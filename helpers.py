@@ -1,18 +1,14 @@
+# import autograd
+# import autograd.numpy as np
 
-#import autograd
 import logging
-import math
 import time
 import numpy as np
-# import autograd.numpy as np
 import scipy
-from sklearn.metrics import f1_score
-from sklearn.metrics import accuracy_score
 from scipy.sparse import csr_matrix
 from sklearn.datasets import load_svmlight_file
 import matplotlib.pyplot as plt
-from sklearn.metrics import classification_report
-#from scipy.special import logsumexp
+import warnings
 
 """
 This file contains helper functions
@@ -38,7 +34,7 @@ def load_mlc_dataset(
                     1: Feature Dimensionality
                     2: Label Dimensionality
     """
-    f = open(filename)
+    f = open(filename, mode='rb')
 
     header_info = False
     if header:
@@ -58,7 +54,7 @@ def load_mlc_dataset(
             temp = np.zeros(LABEL_NUMBER)
             temp[np.asarray(y[i], dtype=int)] = 1
             ult[i] = temp
-        y = csr_matrix(ult)
+        y = scipy.sparse.csc_matrix(ult)
 
     else:
         X, y = load_svmlight_file(
@@ -70,13 +66,26 @@ def load_mlc_dataset(
     return X, y, header_info
 
 
+def todense(x):
+    indexes = x.nonzero()
+    result = np.zeros((x.shape))
+    result[indexes] = x.data
+    return result
+
+
+def slice_csr(csr, index):
+    return csr[:, index]
+
+
 def sigmoid(x):
     """
     An Implementation of the sigmoid function
     """
-    # return 0.5 * (np.tanh(0.5*x) + 1)
-    # return scipy.special.expit(x)
-    return 1. / (1. + np.exp(-x))
+
+    # result = 1. / (1. + np.exp(-x))
+    result = 0.5 * (np.tanh(0.5 * x) + 1)
+
+    return result
 
 
 def log_likelihood(X, W, y):
@@ -112,11 +121,36 @@ def log_likelihood(X, W, y):
     :param y: True Categories of the training examples X
     :return: minus log likelihood
     """
-    sign = (-1)**(1-y)
-    xw_hat = (sign) * np.dot(X, W)
-    L = -np.sum(-np.log(1 + np.exp(-xw_hat)))
+    if (scipy.sparse.issparse(X) | scipy.sparse.issparse(W)):
+        """
+        L = - sum(Yn)
+
+        Yn = log(sigmoid(X*W)) if t = 1
+        Yn = log(1 - sigmoid(X*W) if t = 0
+        
+        Sparsity of X and W can be exploited in dot product, (quote scipy docs) in dot(X * W)
+        nonzero scalar addition must be avoided
+        
+        """
+        # sign = (-1) ** (1 - y)
+        # idea an kseroume oti : y = 1 OR y = 0 data indexes
+        signus = np.zeros(y.shape)
+        signus[y.nonzero()] = 2
+        signus = signus - 1
+        # signus = {y = 1 -> 1, y = 0 -> -1}
+        xw_hat = (csr_matrix(signus)).multiply(X.dot(W))
+        L = -np.sum(-np.log(1 + np.exp(-xw_hat)))
+    else:
+        sign = (-1) ** (1 - y)
+        xw_hat = (sign) * np.dot(X, W)
+        L = -np.sum(-np.log(1 + np.exp(-xw_hat)))
 
     return (L)
+
+
+def typu(x):
+    print(type(x))
+
 
 def auto_gradient(X, W, y):
     """
@@ -139,7 +173,15 @@ def gradient(X, W, y):
     :return: Gradient
     """
     # old_grad = - (X.T.dot(y)) + (X.T.dot(X)).dot(W)
-    return np.sum(((sigmoid(np.dot(X, W))).T - y) * X.T, axis=1)
+    if scipy.sparse.issparse(X) | scipy.sparse.issparse(W):
+        dotp = sigmoid(X.dot(W))
+        ylike = todense(y).reshape((y.shape[0]))
+        sdotp = sigmoid(dotp).T - ylike
+        result = np.sum(sdotp * X)
+    else:
+        result = np.sum(((sigmoid(np.dot(X, W))).T - y) * X.T, axis=1)
+
+    return result
 
 
 def gradient_precalc(X, sigm_xw, y):
@@ -191,8 +233,7 @@ def grad_check(X, W, y):
 
 
 def plot_linreg_results(X, W, y, preds, lossHistory):
-
-    #print("Score " + str(accuracy_score(y_true=y, y_pred=preds)))
+    # print("Score " + str(accuracy_score(y_true=y, y_pred=preds)))
 
     Y = (-W[0] - (W[1] * X)) / W[2]
 

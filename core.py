@@ -1,6 +1,10 @@
 import numpy as np
-
+import helpers
 from helpers import load_mlc_dataset
+from MLC_LinearRegression import MLC_LinearRegression
+from scipy.sparse import csr_matrix
+from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
 
 #   Options
 DATASET_FILENAME = "delicious_data.txt"
@@ -8,7 +12,7 @@ DATASET_TRAIN_SET_FILENAME = "delicious_trSplit.txt"
 DATASET_TEST_SET_FILENAME = "delicious_tstSplit.txt"
 
 #   Debug Options
-DEBUG = 1
+DEBUG = 0
 DEBUG_DATASET_SIZE = int(50)
 
 # 1. Load dataset
@@ -48,12 +52,29 @@ else:
     y_train = y[train_ind[:, 0]]
     y_test = y[test_ind[:, 0]]
 
+y_train = helpers.slice_csr(y_train, 0)
+y_test = helpers.slice_csr(y_test, 0)
+
 # 2. Implement Binary Logistic Regression Classifier
 #   2.1 Code likelihood
 #   2.2 Code Stochastic Gradient Descent with regards to dataset sparsity
 #
 # Notes : Code it like sklearn classifiers
+mlc = MLC_LinearRegression(learning_rate=0.001,
+                           iterations=1000,
+                           batch_size=10,
+                           sparse=True)
+mlc.fit(X_train, y_train)
+y_pred = mlc.predict(X_test)
 
+print("Score " + str(accuracy_score(y_true=helpers.todense(y_test), y_pred=helpers.todense(y_pred))))
+fig = plt.figure()
+
+plt.plot(np.arange(0, len(mlc.lossHistory)), mlc.lossHistory)
+fig.suptitle("Training Loss")
+plt.xlabel("Epoch #")
+plt.ylabel("Loss")
+plt.show()
 # 3. Implement Classifier Chains
 #   3.1 Code classifier chains with regards to interchangeable classifiers objects
 
