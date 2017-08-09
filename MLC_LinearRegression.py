@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 import helpers
+from helpers import size
 import scipy.sparse
 
 """
@@ -71,6 +72,11 @@ class MLC_LinearRegression:
         epochloss = []
         for epoch in np.arange(0, epochs):
             old_loss = np.inf
+            # Shuffle X, y
+            indexes = np.arange(np.shape(X)[0])
+            np.random.shuffle(indexes)
+            X = X[indexes, :]
+            y = y[indexes]
             for (sampleX, sampley) in self.next_batch(X, y, batch_size):
 
                 loss = helpers.log_likelihood(X=sampleX, y=sampley.T, W=self.w)
@@ -93,42 +99,51 @@ class MLC_LinearRegression:
         return self.w
 
     def stochastic_gradient_descent_sparse(self, X, y, tolerance, epochs=2000, batch_size=10):
-        old_loss = np.inf
-        old_loss_ep = np.inf
-
         logging.info("Commencing sparse-aware SGD")
         logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
         epochloss = []
+
         for epoch in np.arange(0, epochs):
             old_loss = np.inf
+            # # Shuffle X, y
+            # indexes = np.arange(np.shape(X)[0])
+            # np.random.shuffle(indexes)
+            # X = X[indexes,:]
+            # y = y[indexes,:]
+            grads = []
             for (sampleX, sampley) in self.next_batch(X, y, batch_size):
 
                 loss = helpers.log_likelihood(X=sampleX, y=sampley.T, W=self.w)
 
                 epochloss.append(loss)
+
                 if np.abs(loss - old_loss) < tolerance:
                     break
                 old_loss = loss
 
                 gradient = helpers.gradient(sampleX, self.w, sampley)
-
-                self.w = self.w - self.l * gradient
+                grads.append(gradient)
+                self.w = np.subtract(self.w, self.l * gradient)
             self.lossHistory.append(np.average(epochloss))
-            logging.info("Ening epoch %i, average loss -> %f", epoch, np.average(epochloss))
-
-            # if np.abs(np.average(epochloss) - old_loss_ep):
+            logging.info("Ending epoch %i, average loss -> %f Epoch gradient AVG -> %f", epoch, np.average(epochloss),
+                         np.average(grads))
+            # if(np.average(epochloss) > old_loss_ep):
             #     break
             # old_loss_ep = np.average(epochloss)
 
         return self.w
 
-    def next_batch(self, X, y, batchSize=5):
-        for i in np.arange(0, X.shape[0], batchSize):
-            yield (X[i:i + batchSize], y[i:i + batchSize])
+    def next_batch(self, X, y, batchSize):
+        for i in np.arange(0, X.shape[0], int(batchSize)):
+            limit = (i + batchSize)
+            if limit > X.shape[0]: limit = X.shape[0]
+            if scipy.sparse.issparse(X):
+                yield (X[i:limit, :], y[i:limit, :])
+            else:
+                yield (X[i:limit, :], y[i:limit])
 
     def predict(self, X):
         logging.info("Predicting Labels")
-        # X_train = np.c_[np.ones((X.shape[0])), X]
         y = helpers.sigmoid((X.dot(self.w)))
         y = np.around(y)
         return y
