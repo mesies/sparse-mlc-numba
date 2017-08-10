@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 import helpers
+import mathutil
 from helpers import size
 import scipy.sparse
 
@@ -51,8 +52,8 @@ class MLC_LinearRegression:
 
             logging.info("Commencing next epoch %i", epoch)
 
-            gradient = helpers.gradient(X, self.w, y)
-            loss = helpers.log_likelihood(X, self.w, y)
+            gradient = mathutil.gradient(X, self.w, y)
+            loss = mathutil.log_likelihood(X, self.w, y)
             self.lossHistory.append(loss)
             logging.info("epoch #{}, loss={} , gradient={}".format(epoch + 1, loss, gradient))
 
@@ -65,8 +66,7 @@ class MLC_LinearRegression:
         return self.w
 
     def stochastic_gradient_descent(self, X, y, tolerance, epochs=2000, batch_size=10):
-        old_loss = np.inf
-        old_loss_ep = np.inf
+
         logging.info("Commencing SGD")
         logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
         epochloss = []
@@ -79,14 +79,14 @@ class MLC_LinearRegression:
             y = y[indexes]
             for (sampleX, sampley) in self.next_batch(X, y, batch_size):
 
-                loss = helpers.log_likelihood(X=sampleX, y=sampley.T, W=self.w)
+                loss = mathutil.log_likelihood(X=sampleX, y=sampley.T, W=self.w)
 
                 epochloss.append(loss)
                 if np.abs(loss - old_loss) < tolerance:
                     break
                 old_loss = loss
 
-                gradient = helpers.gradient(sampleX, self.w, sampley)
+                gradient = mathutil.gradient(sampleX, self.w, sampley)
 
                 self.w = self.w - self.l * gradient
             self.lossHistory.append(np.average(epochloss))
@@ -113,7 +113,7 @@ class MLC_LinearRegression:
             grads = []
             for (sampleX, sampley) in self.next_batch(X, y, batch_size):
 
-                loss = helpers.log_likelihood(X=sampleX, y=sampley.T, W=self.w)
+                loss = mathutil.log_likelihood_sp(X=sampleX, y=sampley.T, W=self.w)
 
                 epochloss.append(loss)
 
@@ -121,7 +121,7 @@ class MLC_LinearRegression:
                     break
                 old_loss = loss
 
-                gradient = helpers.gradient(sampleX, self.w, sampley)
+                gradient = mathutil.gradient_sp(sampleX, self.w, sampley)
                 grads.append(gradient)
                 self.w = np.subtract(self.w, self.l * gradient)
             self.lossHistory.append(np.average(epochloss))
@@ -144,6 +144,6 @@ class MLC_LinearRegression:
 
     def predict(self, X):
         logging.info("Predicting Labels")
-        y = helpers.sigmoid((X.dot(self.w)))
+        y = mathutil.sigmoid((X.dot(self.w)))
         y = np.around(y)
         return y

@@ -5,8 +5,9 @@ from MLC_LinearRegression import MLC_LinearRegression
 from scipy.sparse import csr_matrix
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
-
-#   Options
+import sys
+from helpers import tic, toc#   Options
+ti = tic()
 DATASET_FILENAME = "delicious_data.txt"
 DATASET_TRAIN_SET_FILENAME = "delicious_trSplit.txt"
 DATASET_TEST_SET_FILENAME = "delicious_tstSplit.txt"
@@ -69,6 +70,7 @@ mlc.fit(X_train, y_train)
 y_pred = mlc.predict(X_test)
 
 print("Score " + str(accuracy_score(y_true=y_test.toarray(), y_pred=y_pred)))
+toc(ti)
 fig = plt.figure()
 
 plt.plot(np.arange(0, len(mlc.lossHistory)), mlc.lossHistory)

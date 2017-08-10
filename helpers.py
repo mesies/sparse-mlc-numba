@@ -1,15 +1,15 @@
 # import autograd
 # import autograd.numpy as np
-
-import logging
 import time
+
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.sparse import csr_matrix
 from sklearn.datasets import load_svmlight_file
-import matplotlib.pyplot as plt
-import warnings
+
 import tqdm
+from mathutil import gradient, log_likelihood, gradient_sp, log_likelihood_sp
 
 """
 This file contains helper functions
@@ -158,45 +158,6 @@ def auto_gradient(X, W, y):
     return gradient(X, W, y)
 
 
-def gradient(X, W, y):
-    """
-    Gradient of log_likelihood
-    :param X: Training examples
-    :param W: Weight vector
-    :param y: True Categories of the training examples X
-    :return: Gradient
-    """
-    if scipy.sparse.issparse(X):
-        dott = X.dot(W)
-        dotp = sigmoid(dott)
-        assert dott.shape == dotp.shape
-
-        y = y.toarray()
-        ylike = y.reshape((y.shape[0]))
-
-        sdotp = dotp.T - ylike
-        assert sdotp.shape == ylike.shape
-
-        sdotp = sdotp.reshape((sdotp.shape[0], 1))
-
-        inss = X.multiply(np.repeat(sdotp, X.shape[1], axis=1))
-        assert inss.shape == X.shape
-
-        result = np.sum(inss, axis=0).A1
-        assert result.shape[0] == (inss.shape[1])
-    else:
-        sig = (sigmoid(np.dot(X, W))).T - y
-        assert sig.shape == y.shape
-
-        inss = (sig) * X.T
-        assert inss.shape == X.T.shape
-
-        result = np.sum(inss, axis=1)
-        assert result.shape[0] == inss.shape[0]
-
-    return result
-
-
 def grad_check(X, W, y):
     """
     Checks the validation of gradient versus a numerical approximation
@@ -204,12 +165,15 @@ def grad_check(X, W, y):
     :param W: Weight vector
     :param y: True Categories of the training examples X
     """
+    if scipy.sparse.issparse(X):
+        true_gradient = gradient_sp(X=X, W=W, y=y)
+    else:
+        true_gradient = gradient(X=X, W=W, y=y)
 
-    true_gradient = gradient(X=X, W=W, y=y)
     epsilon = 1e-6
     num_grad = np.zeros(W.shape[0])
     iterr = tqdm.trange(0, W.shape[0])
-
+    # iterr = np.arange(0, W.shape[0])
     for k in (iterr):
         W_tmpP = np.zeros((W.shape))
         W_tmpP[:] = W
@@ -218,10 +182,17 @@ def grad_check(X, W, y):
         W_tmpM[:] = W
 
         W_tmpP[k] = W_tmpP[k] + (epsilon)
-        Ewplus = log_likelihood(X, W_tmpP, y)
+        if scipy.sparse.issparse(X):
+            Ewplus = log_likelihood_sp(X, W_tmpP, y)
+        else:
+            Ewplus = log_likelihood(X, W_tmpP, y)
 
         W_tmpM[k] = W_tmpM[k] - (epsilon)
-        Ewminus = log_likelihood(X, W_tmpM, y)
+        if scipy.sparse.issparse(X):
+            Ewminus = log_likelihood_sp(X, W_tmpM, y)
+        else:
+            Ewminus = log_likelihood(X, W_tmpM, y)
+
 
         num_grad[k] = np.divide((np.subtract(Ewplus, Ewminus)), np.multiply(2, epsilon))
     true_gradient.reshape((W.shape[0], 1))
