@@ -62,8 +62,9 @@ y_test = y_test[:, 0]
 #
 # Notes : Code it like sklearn classifiers
 mlc = MLC_LinearRegression(learning_rate=0.01,
-                           iterations=20,
+                           iterations=400,
                            batch_size=100,
+                           grad_check=False,
                            sparse=True,
                            verbose=True)
 mlc.fit(X_train, y_train)
@@ -71,13 +72,13 @@ y_pred = mlc.predict(X_test)
 
 print("Score " + str(accuracy_score(y_true=y_test.toarray(), y_pred=y_pred)))
 toc(ti)
-fig = plt.figure()
-
-plt.plot(np.arange(0, len(mlc.lossHistory)), mlc.lossHistory)
-fig.suptitle("Training Loss")
-plt.xlabel("Epoch #")
-plt.ylabel("Loss")
-plt.show()
+# fig = plt.figure()
+#
+# plt.plot(np.arange(0, len(mlc.lossHistory)), mlc.lossHistory)
+# fig.suptitle("Training Loss")
+# plt.xlabel("Epoch #")
+# plt.ylabel("Loss")
+# plt.show()
 # 3. Implement Classifier Chains
 #   3.1 Code classifier chains with regards to interchangeable classifiers objects
 

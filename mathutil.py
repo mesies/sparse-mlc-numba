@@ -4,6 +4,7 @@ import scipy
 from scipy.sparse import csr_matrix, coo_matrix, csc_matrix
 
 
+
 def sigmoid(x):
     """
     Sigmoid function.
@@ -14,12 +15,7 @@ def sigmoid(x):
     result = scipy.special.expit(x)
     return result
 
-def sigmoid_sp(x):
-    result = np.zeros(x.shape)
-    r = scipy.special.expit(x.data)
-
-    return result
-
+# @profile
 def gradient_sp(X, W, y):
     """
        Gradient of log_likelihood
@@ -28,10 +24,13 @@ def gradient_sp(X, W, y):
        :param y: True Categories of the training examples X
        :return: Gradient
        """
+    # Optimised : X * W is dense
     dott = X.dot(W)
+
     dotp = sigmoid(dott)
 
     y = y.toarray()
+
     ylike = y.reshape((y.shape[0]))
 
     sdotp = dotp.T - ylike
@@ -40,25 +39,50 @@ def gradient_sp(X, W, y):
     ihh = np.repeat(sdotp, X.shape[1], axis=1)
     inss = X.multiply(ihh)
 
-    result = np.sum(inss, axis=0).A1
+    result = np.sum(inss.toarray(), axis=0)
 
     return result
 
+@numba.jit(nopython = True)
+def signus_numba(y1, indexes, sh):
+    for i in range(0, sh):
+        y1[indexes[i]] = -1
+    return y1
 
+# @profile
 def log_likelihood_sp(X, W, y):
 
     signus = np.ones(y.shape)
     signus[y.nonzero()] = -1
+    #signus  = signus_numba(np.ones(y.shape), y.nonzero()[0], len(y.nonzero()[0]))
 
-    dotr = X.dot(csr_matrix(W).T)
+    dotr = X.dot(W)
+    dotr = dotr.reshape((dotr.shape[0],1))
 
-    xw_hat = (dotr).multiply(signus)
-    # Wrong
-    logg = -np.logaddexp(0, xw_hat.toarray())
-    L = -np.sum(logg)
+    #xw_hat = np.multiply(dotr, signus)
+    xw_hat = np.zeros(dotr.shape)
+    xw_hat = multt(dotr, signus, xw_hat, dotr.shape[0], dotr.shape[1])
+    #L = loggaddexp_numba(xw_hat)
+    logg = -np.logaddexp(0, xw_hat)
+
+    L = summ(logg[:,0], logg.shape[0])
+    #L = -np.sum(logg)
     return L
 
-@numba.jit
+@numba.jit(nopython=True)
+def summ(x, sh):
+    s = x[1]
+    for i in range(1, sh):
+        s = s + x[i]
+    return -s
+
+@numba.jit(nopython=True)
+def multt(A, B, C, dim0, dim1):
+    for i in range(0, dim0):
+        for j in range(0, dim1):
+            C[i,j] = A[i,j] * B[i,j]
+    return C
+
 def gradient(X, W, y):
     """
            Gradient of log_likelihood
@@ -78,7 +102,8 @@ def gradient(X, W, y):
 
     return result
 
-@numba.jit
+
+
 def log_likelihood(X, W, y):
     """
     L = - np.sum(t * np.log(sigmoid(np.dot(X, W))) + (1 - t) * np.log(1 - sigmoid(np.dot(X, W))))

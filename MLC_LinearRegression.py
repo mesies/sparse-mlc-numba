@@ -12,9 +12,10 @@ examples matrix is a sparse matrix
 
 
 class MLC_LinearRegression:
-    def __init__(self, learning_rate=0.0001, iterations=1000, sparse=False, verbose=False, batch_size=20):
+    def __init__(self, learning_rate=0.0001, iterations=1000, sparse=False, verbose=False, grad_check=False, batch_size=20):
         self.batch_size = batch_size
         self.verbose = verbose
+        self.grad_check = grad_check
         self.l = learning_rate
         self.iterations = iterations
         self.w = {}
@@ -22,16 +23,18 @@ class MLC_LinearRegression:
         self.lossHistory = []
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
+
+
         else:
             logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.DEBUG)
+
 
     def fit(self, X, y):
         logging.info("Started Fitting Dataa")
         self.w = np.random.uniform(size=(X.shape[1],))
-        if self.verbose:
+        if self.grad_check:
             logging.info("Commencing Gradient Check")
             logging.info(helpers.grad_check(X, self.w, y))
-
         if self.sparse:
             self.w = self.stochastic_gradient_descent_sparse(X,
                                                              y,
@@ -114,6 +117,7 @@ class MLC_LinearRegression:
             for (sampleX, sampley) in self.next_batch(X, y, batch_size):
 
                 loss = mathutil.log_likelihood_sp(X=sampleX, y=sampley.T, W=self.w)
+                gradient = mathutil.gradient_sp(sampleX, self.w, sampley.T)
 
                 epochloss.append(loss)
 
@@ -121,7 +125,6 @@ class MLC_LinearRegression:
                     break
                 old_loss = loss
 
-                gradient = mathutil.gradient_sp(sampleX, self.w, sampley)
                 grads.append(gradient)
                 self.w = np.subtract(self.w, self.l * gradient)
             self.lossHistory.append(np.average(epochloss))
@@ -138,9 +141,9 @@ class MLC_LinearRegression:
             limit = (i + batchSize)
             if limit > X.shape[0]: limit = X.shape[0]
             if scipy.sparse.issparse(X):
-                yield (X[i:limit, :], y[i:limit, :])
+                yield (X[i:limit, :], y[i:limit, :].T)
             else:
-                yield (X[i:limit, :], y[i:limit])
+                yield (X[i:limit, :], y[i:limit].T)
 
     def predict(self, X):
         logging.info("Predicting Labels")

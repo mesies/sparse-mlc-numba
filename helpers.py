@@ -8,7 +8,7 @@ import scipy
 from scipy.sparse import csr_matrix
 from sklearn.datasets import load_svmlight_file
 
-import tqdm
+# import tqdm
 from mathutil import gradient, log_likelihood, gradient_sp, log_likelihood_sp
 
 """
@@ -172,8 +172,8 @@ def grad_check(X, W, y):
 
     epsilon = 1e-6
     num_grad = np.zeros(W.shape[0])
-    iterr = tqdm.trange(0, W.shape[0])
-    # iterr = np.arange(0, W.shape[0])
+    # iterr = tqdm.trange(0, W.shape[0])
+    iterr = np.arange(0, W.shape[0])
     for k in (iterr):
         W_tmpP = np.zeros((W.shape))
         W_tmpP[:] = W
