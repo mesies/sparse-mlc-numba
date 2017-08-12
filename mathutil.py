@@ -2,7 +2,7 @@ import numba
 import numpy as np
 import scipy
 from scipy.sparse import csr_matrix, coo_matrix, csc_matrix
-
+profile = lambda f: f
 
 
 def sigmoid(x):
@@ -15,7 +15,7 @@ def sigmoid(x):
     result = scipy.special.expit(x)
     return result
 
-# @profile
+@profile
 def gradient_sp(X, W, y):
     """
        Gradient of log_likelihood
@@ -29,31 +29,40 @@ def gradient_sp(X, W, y):
 
     dotp = sigmoid(dott)
 
-    y = y.toarray()
+    # y = y.toarray()
+    # ylike = y.reshape((y.shape[0]))
+    #
+    # sdotp = dotp.T - ylike
+    # sdotp = sdotp.reshape((sdotp.shape[0], 1))
 
-    ylike = y.reshape((y.shape[0]))
 
-    sdotp = dotp.T - ylike
-    sdotp = sdotp.reshape((sdotp.shape[0], 1))
 
-    ihh = np.repeat(sdotp, X.shape[1], axis=1)
-    inss = X.multiply(ihh)
+    if y.nnz != 0:
+        ind = y.nonzero()[0]
+        dotp.T[ind] = dotp.T[ind] - 1   #Because y[ind] = 1, if ind = y.nonzero()
+    sdotp = dotp.T
 
-    result = np.sum(inss.toarray(), axis=0)
+    # sdotp = sdotp.reshape((sdotp.shape[0], 1)) #paizei na mhn xreiazetai
+    #inss = X.multiply(ihh)
+
+    # ihh = np.repeat(sdotp, X.shape[1], axis=1)
+    # inss = X.multiply(ihh)
+
+    inss = np.zeros((X.shape))
+    ind = X.nonzero()
+    inss[ind[0], ind[1]] = sdotp[ind[0],]
+
+    result = np.sum(inss, axis=0)
 
     return result
 
-@numba.jit(nopython = True)
-def signus_numba(y1, indexes, sh):
-    for i in range(0, sh):
-        y1[indexes[i]] = -1
-    return y1
 
-# @profile
+@profile
 def log_likelihood_sp(X, W, y):
 
     signus = np.ones(y.shape)
-    signus[y.nonzero()] = -1
+    if y.nnz != 0:
+        signus[y.nonzero()] = -1
     #signus  = signus_numba(np.ones(y.shape), y.nonzero()[0], len(y.nonzero()[0]))
 
     dotr = X.dot(W)
@@ -68,6 +77,12 @@ def log_likelihood_sp(X, W, y):
     L = summ(logg[:,0], logg.shape[0])
     #L = -np.sum(logg)
     return L
+
+@numba.jit(nopython = True)
+def signus_numba(y1, indexes, sh):
+    for i in range(0, sh):
+        y1[indexes[i]] = -1
+    return y1
 
 @numba.jit(nopython=True)
 def summ(x, sh):

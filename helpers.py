@@ -8,7 +8,7 @@ import scipy
 from scipy.sparse import csr_matrix
 from sklearn.datasets import load_svmlight_file
 
-# import tqdm
+import tqdm
 from mathutil import gradient, log_likelihood, gradient_sp, log_likelihood_sp
 
 """
@@ -63,7 +63,7 @@ def load_mlc_dataset(
             temp = np.zeros(LABEL_NUMBER)
             temp[np.asarray(y[i], dtype=int)] = 1
             ult[i] = temp
-        y = scipy.sparse.csc_matrix(ult)
+        y = scipy.sparse.csr_matrix(ult)
 
     else:
         X, y = load_svmlight_file(
@@ -73,77 +73,6 @@ def load_mlc_dataset(
     f.close()
 
     return X, y, header_info
-
-
-def sigmoid(x):
-    """
-    Sigmoid function.
-    """
-
-    # result = 1. / (1. + np.exp(-x))
-    # result = 0.5 * (np.tanh(0.5 * x) + 1)
-    result = scipy.special.expit(x)
-    return result
-
-
-# @profile
-def log_likelihood(X, W, y):
-    """
-    L = - np.sum(t * np.log(sigmoid(np.dot(X, W))) + (1 - t) * np.log(1 - sigmoid(np.dot(X, W))))
-    which can be written as
-    xw_hat = ((-1)**(1-t)) * np.dot(X, W)
-    L = -np.sum(-np.log(1 + np.exp(-xw_hat)))
-
-
-    L = - sum(Yn)
-
-    Yn = log(sigmoid(X*W)) if t = 1
-    Yn = log(1 - sigmoid(X*W) if t = 0
-    =>
-    Yn = log(sigmoid(X*W)) if t = 1
-    Yn = log(1 - sigmoid(X*W) if t = 0
-    ^
-    1 - sigmoid(x) = sigmoid(-x)
-    =>
-    Yn = log(sigmoid(X*W)) if t = 1
-    Yn = log(sigmoid((-1)*X*W) if t = 0
-    =>
-    Yn = log(sigmoid((-1)^(t-1) * (X*W))
-    ^
-    log(sigmoid(x)) = log(1 / 1 + exp(-x)) = -log(1 + exp(-x))
-    =>
-    L = -np.sum(-np.log(1 + np.exp(-((-1)**(1-t)) * np.dot(X, W))))
-
-    This functions returns the log likelihood that will be maximized.
-    :param X: Training examples
-    :param W: Weight vector
-    :param y: True Categories of the training examples X
-    :return: minus log likelihood
-    """
-    if scipy.sparse.issparse(X):
-        """
-        L = - sum(Yn)
-        Yn = log(sigmoid(X*W)) if t = 1
-        Yn = log(1 - sigmoid(X*W) if t = 0
-        
-        """
-
-        signus = np.ones(y.shape)
-        signus[y.nonzero()] = -1
-
-        dotr = X.dot(csr_matrix(W).T)
-
-        xw_hat = (dotr).multiply(signus)
-
-        logg = -np.logaddexp(0, xw_hat.toarray())
-        L = -np.sum(logg)
-
-    else:
-        sign = (-1) ** (1 - y)
-        xw_hat = sign * np.dot(X, W)
-        L = -np.sum(-np.logaddexp(0, (-xw_hat)))
-
-    return L
 
 
 def auto_gradient(X, W, y):
@@ -172,8 +101,8 @@ def grad_check(X, W, y):
 
     epsilon = 1e-6
     num_grad = np.zeros(W.shape[0])
-    # iterr = tqdm.trange(0, W.shape[0])
-    iterr = np.arange(0, W.shape[0])
+    iterr = tqdm.trange(0, W.shape[0])
+    # iterr = np.arange(0, W.shape[0])
     for k in (iterr):
         W_tmpP = np.zeros((W.shape))
         W_tmpP[:] = W

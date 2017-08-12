@@ -141,6 +141,7 @@ class MLC_LinearRegression:
             limit = (i + batchSize)
             if limit > X.shape[0]: limit = X.shape[0]
             if scipy.sparse.issparse(X):
+                #18/41 sec of execution
                 yield (X[i:limit, :], y[i:limit, :].T)
             else:
                 yield (X[i:limit, :], y[i:limit].T)
