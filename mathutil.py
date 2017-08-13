@@ -3,7 +3,7 @@ import numpy as np
 import scipy
 from scipy.sparse import csr_matrix, coo_matrix, csc_matrix
 import numexpr as ne
-profile = lambda f: f
+#profile = lambda f: f
 
 
 def sigmoid(x):
@@ -17,7 +17,7 @@ def sigmoid(x):
     return result
 
 @profile
-def gradient_sp(X, W, y):
+def gradient_sp(X, W, y, result=''):
     """
        Gradient of log_likelihood
        :param X: Training examples
@@ -30,28 +30,15 @@ def gradient_sp(X, W, y):
     #dotp = (ne.evaluate('1 / (1 + exp(-dott))'))
     dotp = sigmoid(dott)
 
-    # y = y.toarray()
-    # ylike = y.reshape((y.shape[0]))
-    #
-    # sdotp = dotp.T - ylike
-    # sdotp = sdotp.reshape((sdotp.shape[0], 1))
-
-
 
     if y.nnz != 0:
         ind = y.nonzero()[0]
-        dotp.T[ind] = dotp.T[ind] - 1   #Because y[ind] = 1, if ind = y.nonzero()
+        dotp.T[ind] -= 1   #Because y[ind] = 1, if ind = y.nonzero()
     sdotp = dotp.T
-
-    # sdotp = sdotp.reshape((sdotp.shape[0], 1)) #paizei na mhn xreiazetai
-    #inss = X.multiply(ihh)
-
-    # ihh = np.repeat(sdotp, X.shape[1], axis=1)
-    # inss = X.multiply(ihh)
 
     inss = np.zeros((X.shape))
     ind = X.nonzero()
-    inss[ind[0], ind[1]] = sdotp[ind[0],]
+    inss[ind[0], ind[1]] = np.take(sdotp, ind[0], axis=0)
 
     result = np.sum(inss, axis=0)
     #result = ne.evaluate('sum(inss, axis=0)')
@@ -60,36 +47,38 @@ def gradient_sp(X, W, y):
 
 
 @profile
-def log_likelihood_sp(X, W, y):
+def log_likelihood_sp(X, W, y, result=''):
 
     signus = np.ones(y.shape)
     if y.nnz != 0:
         signus[y.nonzero()] = -1
+        #signus_numba(signus, y.nonzero()[0], len(y.nonzero()[0]))
+
     # y -> 1 = -1 y -> 0 -> 1
-    #signus  = signus_numba(np.ones(y.shape), y.nonzero()[0], len(y.nonzero()[0]))
 
     dotr = X.dot(W)
-    dotr = dotr.reshape((dotr.shape[0],1))
+    #dotr = dotr.reshape((dotr.shape[0], 1))
 
     #xw_hat = np.multiply(dotr, signus)
-    xw_hat = np.zeros(dotr.shape)
-    xw_hat = multt(dotr, signus, xw_hat, dotr.shape[0], dotr.shape[1])
+    xw_hat = np.zeros(signus.shape)
+    xw_hat = multt(dotr, signus, xw_hat, signus.shape[0], signus.shape[1])
     #xw_hat = ne.evaluate('dotr * signus')
 
     #logg = ne.evaluate('-log(1 + exp(xw_hat))')
     logg = -np.logaddexp(0, xw_hat)
 
-    L = summ(logg[:,0], logg.shape[0])
+    #Minus applied on summ function
+    #L = summ(logg[:,0], logg.shape[0])
     #L = ne.evaluate('sum(logg)')
     #L = -np.sum(logg)
-    return -L
+
+    result = summ(logg[:,0], logg.shape[0])
+    return result
 
 
-@numba.jit(nopython = True, cache=True)
+@numba.jit('void(float64[:,:], int32[:], int64)', nopython = True, cache=True)
 def signus_numba(y1, indexes, sh):
-    for i in range(0, sh):
-        y1[indexes[i]] = -1
-    return y1
+        y1[indexes] = -1
 
 @numba.jit('float64(float64[:], int64)',nopython=True, cache=True)
 def summ(x, sh):
@@ -98,11 +87,11 @@ def summ(x, sh):
         s = s + x[i]
     return -s
 
-@numba.jit('float64[:,:](float64[:,:], float64[:,:], float64[:,:], int64, int64)',nopython=True, cache=True)
+@numba.jit('float64[:,:](float64[:], float64[:,:], float64[:,:], int64, int64)',nopython=True, cache=True)
 def multt(A, B, C, dim0, dim1):
     for i in range(0, dim0):
         for j in range(0, dim1):
-            C[i,j] = A[i,j] * B[i,j]
+            C[i,j] = A[i] * B[i,j]
     return C
 
 def gradient(X, W, y):
@@ -178,8 +167,8 @@ def log_likelihood(X, W, y):
         L = -np.sum(logg)
 
     else:
-        sign = (-1) ** (1 - y)
+        sign = (-1) ** (y)
         xw_hat = sign * np.dot(X, W)
-        L = -np.sum(-np.logaddexp(0, (-xw_hat)))
+        L = -np.sum(-np.logaddexp(0, (xw_hat)))
 
     return L

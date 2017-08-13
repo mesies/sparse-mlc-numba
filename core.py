@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 import sys
 from helpers import tic, toc#   Options
 ti = tic()
-DATASET_FILENAME = "delicious_data.txt"
-DATASET_TRAIN_SET_FILENAME = "delicious_trSplit.txt"
-DATASET_TEST_SET_FILENAME = "delicious_tstSplit.txt"
+DATASET_FILENAME = "data\delicious_data.txt"
+DATASET_TRAIN_SET_FILENAME = "data\delicious_trSplit.txt"
+DATASET_TEST_SET_FILENAME = "data\delicious_tstSplit.txt"
 
 #   Debug Options
 DEBUG = 0
@@ -66,7 +66,7 @@ mlc = MLC_LinearRegression(learning_rate=0.01,
                            batch_size=100,
                            grad_check=False,
                            sparse=True,
-                           verbose=False)
+                           verbose=True)
 mlc.fit(X_train, y_train)
 y_pred = mlc.predict(X_test)
 

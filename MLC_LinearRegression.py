@@ -4,6 +4,7 @@ import helpers
 import mathutil
 from helpers import size
 import scipy.sparse
+from multiprocessing import Process
 
 """
 This is an implementation of Linear Regression with SGD solver aiming at performance when training
@@ -12,7 +13,8 @@ examples matrix is a sparse matrix
 
 
 class MLC_LinearRegression:
-    def __init__(self, learning_rate=0.0001, iterations=1000, sparse=False, verbose=False, grad_check=False, batch_size=20):
+    def __init__(self, learning_rate=0.0001, iterations=1000, sparse=False, verbose=False, grad_check=False,
+                 batch_size=20):
         self.batch_size = batch_size
         self.verbose = verbose
         self.grad_check = grad_check
@@ -28,13 +30,13 @@ class MLC_LinearRegression:
         else:
             logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.DEBUG)
 
-
     def fit(self, X, y):
         logging.info("Started Fitting Dataa")
         self.w = np.random.uniform(size=(X.shape[1],))
         if self.grad_check:
             logging.info("Commencing Gradient Check")
             logging.info(helpers.grad_check(X, self.w, y))
+            exit(0)
         if self.sparse:
             self.w = self.stochastic_gradient_descent_sparse(X,
                                                              y,
@@ -120,12 +122,13 @@ class MLC_LinearRegression:
                 gradient = mathutil.gradient_sp(sampleX, self.w, sampley.T)
 
                 epochloss.append(loss)
+                grads.append(gradient)
 
                 if np.abs(loss - old_loss) < tolerance:
                     break
                 old_loss = loss
 
-                grads.append(gradient)
+                # TODO add momentum
                 self.w = np.subtract(self.w, self.l * gradient)
             self.lossHistory.append(np.average(epochloss))
             logging.info("Ending epoch %i, average loss -> %f Epoch gradient AVG -> %f", epoch, np.average(epochloss),
@@ -141,7 +144,7 @@ class MLC_LinearRegression:
             limit = (i + batchSize)
             if limit > X.shape[0]: limit = X.shape[0]
             if scipy.sparse.issparse(X):
-                #18/41 sec of execution
+                # 18/41 sec of execution
                 yield (X[i:limit, :], y[i:limit, :].T)
             else:
                 yield (X[i:limit, :], y[i:limit].T)
