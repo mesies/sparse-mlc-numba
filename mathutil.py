@@ -2,6 +2,7 @@ import numba
 import numpy as np
 import scipy
 from scipy.sparse import csr_matrix, coo_matrix, csc_matrix
+import numexpr as ne
 profile = lambda f: f
 
 
@@ -26,7 +27,7 @@ def gradient_sp(X, W, y):
        """
     # Optimised : X * W is dense
     dott = X.dot(W)
-
+    #dotp = (ne.evaluate('1 / (1 + exp(-dott))'))
     dotp = sigmoid(dott)
 
     # y = y.toarray()
@@ -53,6 +54,7 @@ def gradient_sp(X, W, y):
     inss[ind[0], ind[1]] = sdotp[ind[0],]
 
     result = np.sum(inss, axis=0)
+    #result = ne.evaluate('sum(inss, axis=0)')
 
     return result
 
@@ -63,6 +65,7 @@ def log_likelihood_sp(X, W, y):
     signus = np.ones(y.shape)
     if y.nnz != 0:
         signus[y.nonzero()] = -1
+    # y -> 1 = -1 y -> 0 -> 1
     #signus  = signus_numba(np.ones(y.shape), y.nonzero()[0], len(y.nonzero()[0]))
 
     dotr = X.dot(W)
@@ -71,27 +74,31 @@ def log_likelihood_sp(X, W, y):
     #xw_hat = np.multiply(dotr, signus)
     xw_hat = np.zeros(dotr.shape)
     xw_hat = multt(dotr, signus, xw_hat, dotr.shape[0], dotr.shape[1])
-    #L = loggaddexp_numba(xw_hat)
+    #xw_hat = ne.evaluate('dotr * signus')
+
+    #logg = ne.evaluate('-log(1 + exp(xw_hat))')
     logg = -np.logaddexp(0, xw_hat)
 
     L = summ(logg[:,0], logg.shape[0])
+    #L = ne.evaluate('sum(logg)')
     #L = -np.sum(logg)
-    return L
+    return -L
 
-@numba.jit(nopython = True)
+
+@numba.jit(nopython = True, cache=True)
 def signus_numba(y1, indexes, sh):
     for i in range(0, sh):
         y1[indexes[i]] = -1
     return y1
 
-@numba.jit(nopython=True)
+@numba.jit('float64(float64[:], int64)',nopython=True, cache=True)
 def summ(x, sh):
-    s = x[1]
+    s = x[0]
     for i in range(1, sh):
         s = s + x[i]
     return -s
 
-@numba.jit(nopython=True)
+@numba.jit('float64[:,:](float64[:,:], float64[:,:], float64[:,:], int64, int64)',nopython=True, cache=True)
 def multt(A, B, C, dim0, dim1):
     for i in range(0, dim0):
         for j in range(0, dim1):

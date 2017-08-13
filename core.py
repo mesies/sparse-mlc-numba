@@ -66,7 +66,7 @@ mlc = MLC_LinearRegression(learning_rate=0.01,
                            batch_size=100,
                            grad_check=False,
                            sparse=True,
-                           verbose=True)
+                           verbose=False)
 mlc.fit(X_train, y_train)
 y_pred = mlc.predict(X_test)
 
