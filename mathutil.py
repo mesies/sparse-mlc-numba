@@ -30,7 +30,6 @@ def gradient_sp(X, W, y, result=''):
     #dotp = (ne.evaluate('1 / (1 + exp(-dott))'))
     dotp = sigmoid(dott)
 
-
     if y.nnz != 0:
         ind = y.nonzero()[0]
         dotp.T[ind] -= 1   #Because y[ind] = 1, if ind = y.nonzero()

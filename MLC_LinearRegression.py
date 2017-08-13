@@ -13,8 +13,15 @@ examples matrix is a sparse matrix
 
 
 class MLC_LinearRegression:
-    def __init__(self, learning_rate=0.0001, iterations=1000, sparse=False, verbose=False, grad_check=False,
-                 batch_size=20):
+    def __init__(self, learning_rate=0.0001,
+                 iterations=1000,
+                 sparse=False,
+                 verbose=False,
+                 grad_check=False,
+                 batch_size=20,
+                 alpha = 0.5,
+                 velocity = 1):
+
         self.batch_size = batch_size
         self.verbose = verbose
         self.grad_check = grad_check
@@ -23,6 +30,8 @@ class MLC_LinearRegression:
         self.w = {}
         self.sparse = sparse
         self.lossHistory = []
+        self.alpha = alpha
+        self.velocity = velocity
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
 
@@ -103,10 +112,12 @@ class MLC_LinearRegression:
 
         return self.w
 
+    @profile
     def stochastic_gradient_descent_sparse(self, X, y, tolerance, epochs=2000, batch_size=10):
         logging.info("Commencing sparse-aware SGD")
         logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
         epochloss = []
+        # learning rate e, momentum parameter a,
 
         for epoch in np.arange(0, epochs):
             old_loss = np.inf
@@ -128,8 +139,8 @@ class MLC_LinearRegression:
                     break
                 old_loss = loss
 
-                # TODO add momentum
-                self.w = np.subtract(self.w, self.l * gradient)
+                self.velocity = (self.alpha * self.velocity) - (self.l * gradient)
+                self.w = self.w + self.velocity
             self.lossHistory.append(np.average(epochloss))
             logging.info("Ending epoch %i, average loss -> %f Epoch gradient AVG -> %f", epoch, np.average(epochloss),
                          np.average(grads))

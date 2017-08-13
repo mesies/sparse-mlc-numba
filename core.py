@@ -63,7 +63,7 @@ y_test = y_test[:, 0]
 # Notes : Code it like sklearn classifiers
 mlc = MLC_LinearRegression(learning_rate=0.01,
                            iterations=400,
-                           batch_size=100,
+                           batch_size=50,
                            grad_check=False,
                            sparse=True,
                            verbose=True)
