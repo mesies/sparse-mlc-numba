@@ -112,7 +112,7 @@ class MLC_LinearRegression:
 
         return self.w
 
-    @profile
+    #@profile
     def stochastic_gradient_descent_sparse(self, X, y, tolerance, epochs=2000, batch_size=10):
         logging.info("Commencing sparse-aware SGD")
         logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
