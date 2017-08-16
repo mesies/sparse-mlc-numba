@@ -129,8 +129,8 @@ class MLC_LinearRegression:
             grads = []
             for (sampleX, sampley) in self.next_batch(X, y, batch_size):
 
-                loss = mathutil.log_likelihood_sp(X=sampleX, y=sampley.T, W=self.w)
-                gradient = mathutil.gradient_sp(sampleX, self.w, sampley.T)
+                loss = mathutil.log_likelihood_sp(X=sampleX, y=sampley, W=self.w)
+                gradient = mathutil.gradient_sp(sampleX, self.w, sampley)
 
                 epochloss.append(loss)
                 grads.append(gradient)
@@ -156,9 +156,12 @@ class MLC_LinearRegression:
             if limit > X.shape[0]: limit = X.shape[0]
             if scipy.sparse.issparse(X):
                 # 18/41 sec of execution
-                yield (X[i:limit, :], y[i:limit, :].T)
+                yield (X[i:limit, :], y[i:limit, :])
             else:
-                yield (X[i:limit, :], y[i:limit].T)
+                yield (X[i:limit, :], y[i:limit])
+
+
+
 
     def predict(self, X):
         logging.info("Predicting Labels")

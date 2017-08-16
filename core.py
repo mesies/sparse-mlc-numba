@@ -1,12 +1,11 @@
+import sys
+
 import numpy as np
-import helpers
-from helpers import load_mlc_dataset
+from helpers import load_mlc_dataset, tic, toc
 from MLC_LinearRegression import MLC_LinearRegression
-from scipy.sparse import csr_matrix
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
-import sys
-from helpers import tic, toc#   Options
+
 ti = tic()
 DATASET_FILENAME = "data\delicious_data.txt"
 DATASET_TRAIN_SET_FILENAME = "data\delicious_trSplit.txt"

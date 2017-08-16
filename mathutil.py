@@ -56,7 +56,7 @@ def log_likelihood_sp(X, W, y, result=''):
     logg = -np.logaddexp(0, xw_hat)
 
     #Minus applied on summ function
-    result = summ(logg[:,0], logg.shape[0])
+    result = summ(logg[:, 0], logg.shape[0])
     return result
 
 
@@ -67,7 +67,9 @@ def nonzero(x):
     nonzero_numb(indrow, indcol, x.data, x.indices, x.indptr, x.shape[0])
     return indrow, indcol
 
-@numba.jit('void(int32[:],int32[:], float64[:], int32[:], int32[:], int32)', nopython=True, cache=True)
+@numba.jit('void(int32[:],int32[:], float64[:], int32[:], int32[:], int32)',
+           nopython=True,
+           cache=True)
 def nonzero_numb(resultrow, resultcol, data, indices, indptr, columns):
     # column indices for column i is in indices[indptr[i]:indptr[i+1]]
     h = 0
@@ -79,12 +81,16 @@ def nonzero_numb(resultrow, resultcol, data, indices, indptr, columns):
             h += 1
 
 
-@numba.jit('void(float64[:,:], int32[:], int64)', nopython=True, cache=True)
+@numba.jit('void(float64[:,:], int32[:], int64)',
+           nopython=True,
+           cache=True)
 def signus_numba(y1, indexes, sh):
-        y1[indexes] = -1
+    y1[indexes] = -1
 
 
-@numba.jit('float64(float64[:], int64)',nopython=True, cache=True)
+@numba.jit('float64(float64[:], int64)',
+           nopython=True,
+           cache=True)
 def summ(x, sh):
     s = x[0]
     for i in range(1, sh):
@@ -92,11 +98,13 @@ def summ(x, sh):
     return -s
 
 
-@numba.jit('float64[:,:](float64[:], float64[:,:], float64[:,:], int64, int64)',nopython=True, cache=True)
+@numba.jit('float64[:,:](float64[:], float64[:,:], float64[:,:], int64, int64)',
+           nopython=True,
+           cache=True)
 def multt(A, B, C, dim0, dim1):
     for i in range(0, dim0):
         for j in range(0, dim1):
-            C[i,j] = A[i] * B[i,j]
+            C[i, j] = A[i] * B[i, j]
     return C
 
 
@@ -157,10 +165,8 @@ def log_likelihood(X, W, y):
         """
         L = - sum(Yn)
         Yn = log(sigmoid(X*W)) if t = 1
-        Yn = log(1 - sigmoid(X*W) if t = 0
-        
+        Yn = log(1 - sigmoid(X*W) if t = 0        
         """
-
         signus = np.ones(y.shape)
         signus[y.nonzero()] = -1
 
