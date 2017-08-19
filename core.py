@@ -2,7 +2,7 @@ import sys
 
 import numpy as np
 from helpers import load_mlc_dataset, tic, toc
-from MLC_LinearRegression import MLC_LinearRegression
+from MlcLinReg import MlcLinReg
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 
@@ -60,12 +60,12 @@ y_test = y_test[:, 0]
 #   2.2 Code Stochastic Gradient Descent with regards to dataset sparsity
 #
 # Notes : Code it like sklearn classifiers
-mlc = MLC_LinearRegression(learning_rate=0.01,
-                           iterations=400,
-                           batch_size=50,
-                           grad_check=False,
-                           sparse=True,
-                           verbose=True)
+mlc = MlcLinReg(learning_rate=0.01,
+                iterations=400,
+                batch_size=50,
+                grad_check=False,
+                sparse=True,
+                verbose=False)
 mlc.fit(X_train, y_train)
 y_pred = mlc.predict(X_test)
 

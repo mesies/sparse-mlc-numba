@@ -4,7 +4,7 @@ import helpers
 import sklearn
 import logging
 import numpy as np
-from MLC_LinearRegression import MLC_LinearRegression
+from MlcLinReg import MlcLinReg
 import matplotlib.pyplot as plt
 
 (X, y) = sklearn.datasets.make_blobs(
@@ -20,7 +20,7 @@ np.float64(X)
 np.float64(y)
 
 
-mlc = MLC_LinearRegression(learning_rate=0.001,iterations=2000, batch_size=200, verbose=True)
+mlc = MlcLinReg(learning_rate=0.001, iterations=2000, batch_size=200, verbose=True)
 W = mlc.fit(X, y)
 preds = mlc.predict(X)
 

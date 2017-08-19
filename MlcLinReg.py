@@ -12,15 +12,16 @@ examples matrix is a sparse matrix
 """
 
 
-class MLC_LinearRegression:
-    def __init__(self, learning_rate=0.0001,
+class MlcLinReg:
+    def __init__(self,
+                 learning_rate=0.0001,
                  iterations=1000,
                  sparse=False,
                  verbose=False,
                  grad_check=False,
                  batch_size=20,
-                 alpha = 0.5,
-                 velocity = 1):
+                 alpha=0.5,
+                 velocity=1):
 
         self.batch_size = batch_size
         self.verbose = verbose
@@ -112,7 +113,7 @@ class MLC_LinearRegression:
 
         return self.w
 
-    #@profile
+    @profile
     def stochastic_gradient_descent_sparse(self, X, y, tolerance, epochs=2000, batch_size=10):
         logging.info("Commencing sparse-aware SGD")
         logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
