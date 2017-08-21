@@ -14,7 +14,6 @@ class MlcClassifierChains:
         self.label_dim = -1
         logging.basicConfig(level=logging.WARNING)
 
-    @profile
     def fit(self, X_train, y_train):
         """
         Train with X, y0 -> keep weights in self.weights[0]
@@ -43,20 +42,24 @@ class MlcClassifierChains:
             clf.fit(X, y)
             self.trained.append(clf)
             X = sp.hstack([X, y_train[:, i]], format="csr")
-            if i==200: exit()
 
     def predict(self, X_test):
         logging.info("***************************************************")
         logging.info("       Commencing Classifier Chain predicting")
         logging.info("***************************************************")
-        result = sp.lil_matrix((X_test.shape[0], self.label_dim))
         i = 0
         X = X_test
-        y = self.trained.pop(i).predict(X)
-        result[i, :] = y
-        X = sp.hstack([X, result[i, :]], format="csr")
+        clf = self.trained[i]
+        y = clf.predict(X)
+        result = np.zeros((X_test.shape[0], self.label_dim))
+
+        result[:, i] = y
+        y = y.reshape((y.shape[0], 1))
+        X = sp.hstack([X, sp.csr_matrix(y)], format="csr")
 
         for i in tqdm.trange(1, self.label_dim):
-            y = self.trained.pop(i).predict(X)
-            result[i, :] = y
-            X = sp.hstack([X, result[i, :]], format="csr")
+            clf = self.trained[i]
+            y = clf.predict(X)
+            result[:, i] = y
+            y = y.reshape((y.shape[0], 1))
+            X = sp.hstack([X, sp.csr_matrix(y)], format="csr")

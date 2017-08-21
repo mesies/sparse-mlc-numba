@@ -55,11 +55,11 @@ else:
 
 mlc = MlcClassifierChains(MlcLinReg,
                           learning_rate=0.001,
-                          iterations=100,
+                          iterations=5,
                           sparse=True,
                           verbose=False,
                           grad_check=False,
-                          batch_size=20,
+                          batch_size=1,
                           alpha=0.5,
                           velocity=1)
 mlc.fit(X_train, y_train)

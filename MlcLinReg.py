@@ -113,7 +113,6 @@ class MlcLinReg:
 
         return self.w
 
-    @profile
     def stochastic_gradient_descent_sparse(self, X, y, tolerance, epochs=2000, batch_size=10):
         logging.info("Commencing sparse-aware SGD")
         logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
@@ -161,11 +160,8 @@ class MlcLinReg:
             else:
                 yield (X[i:limit, :], y[i:limit])
 
-
-
-
     def predict(self, X):
         logging.info("Predicting Labels")
         y = mathutil.sigmoid((X.dot(self.w)))
         y = np.around(y)
-        return y
+        return (y)
