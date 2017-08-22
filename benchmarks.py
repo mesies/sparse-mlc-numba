@@ -54,15 +54,18 @@ else:
     y_test = y[test_ind[:, 0]]
 
 mlc = MlcClassifierChains(MlcLinReg,
-                          learning_rate=0.001,
-                          iterations=5,
+                          learning_rate=0.01,
+                          iterations=150,
                           sparse=True,
                           verbose=False,
                           grad_check=False,
-                          batch_size=1,
+                          batch_size=50,
                           alpha=0.5,
                           velocity=1)
 mlc.fit(X_train, y_train)
-mlc.predict(X_test)
+ypred = mlc.predict(X_test)
+
+from MlcScore import score_accuracy
+print score_accuracy(ypred, y_test)
 
 toc(ti)

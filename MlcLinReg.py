@@ -5,6 +5,8 @@ import mathutil
 from helpers import size
 import scipy.sparse
 from multiprocessing import Process
+from numba import prange
+
 
 """
 This is an implementation of Linear Regression with SGD solver aiming at performance when training
@@ -119,7 +121,7 @@ class MlcLinReg:
         epochloss = []
         # learning rate e, momentum parameter a,
 
-        for epoch in np.arange(0, epochs):
+        for epoch in range(0, epochs):
             old_loss = np.inf
             # # Shuffle X, y
             # indexes = np.arange(np.shape(X)[0])
@@ -151,7 +153,7 @@ class MlcLinReg:
         return self.w
 
     def next_batch(self, X, y, batchSize):
-        for i in np.arange(0, X.shape[0], int(batchSize)):
+        for i in range(0, X.shape[0], int(batchSize)):
             limit = (i + batchSize)
             if limit > X.shape[0]: limit = X.shape[0]
             if scipy.sparse.issparse(X):

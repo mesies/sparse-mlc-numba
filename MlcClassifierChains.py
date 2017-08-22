@@ -63,3 +63,5 @@ class MlcClassifierChains:
             result[:, i] = y
             y = y.reshape((y.shape[0], 1))
             X = sp.hstack([X, sp.csr_matrix(y)], format="csr")
+
+        return result

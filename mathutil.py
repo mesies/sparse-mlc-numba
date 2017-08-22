@@ -3,8 +3,11 @@ import numpy as np
 import scipy
 from scipy.sparse import csr_matrix, coo_matrix, csc_matrix
 import numexpr as ne
+from joblib import Parallel, delayed
+from numba import prange
+#'@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
+#as few lines as possible each time line_profiler is run a lambda is used
 profile = lambda f: f
-
 
 
 @profile
@@ -52,7 +55,6 @@ def log_likelihood_sp(X, W, y, result=''):
     xw_hat = np.zeros(signus.shape)
     xw_hat = multt(dotr, signus, xw_hat, signus.shape[0], signus.shape[1])
 
-
     logg = -np.logaddexp(0, xw_hat)
 
     #Minus applied on summ function
@@ -61,6 +63,11 @@ def log_likelihood_sp(X, W, y, result=''):
 
 
 def nonzero(x):
+    """
+    Returns indices of non zero elements of a scipy csr_matrix
+    :param x: The matrix in question
+    :return: row indices and column indices
+    """
     indrow = np.zeros((x.data.shape[0]), dtype=int)
     indcol = np.zeros((x.data.shape[0]), dtype=int)
 
@@ -81,17 +88,16 @@ def nonzero_numb(resultrow, resultcol, data, indices, indptr, columns):
             h += 1
 
 
-@numba.jit('void(float64[:,:], int32[:], int64)',
-           nopython=True,
-           cache=True)
-def signus_numba(y1, indexes, sh):
-    y1[indexes] = -1
-
-
 @numba.jit('float64(float64[:], int64)',
            nopython=True,
            cache=True)
 def summ(x, sh):
+    """
+    An optimised summation using Numba's JIT compiler
+    :param x:
+    :param sh:
+    :return:
+    """
     s = x[0]
     for i in range(1, sh):
         s = s + x[i]
@@ -101,11 +107,20 @@ def summ(x, sh):
 @numba.jit('float64[:,:](float64[:], float64[:,:], float64[:,:], int64, int64)',
            nopython=True,
            cache=True)
-def multt(A, B, C, dim0, dim1):
+def multt(row_matrix, matrix, result, dim0, dim1):
+    """
+    Optimised matrix element-wise multiplication when one matrix
+    :param row_matrix:
+    :param matrix:
+    :param result:
+    :param dim0:
+    :param dim1:
+    :return:
+    """
     for i in range(0, dim0):
         for j in range(0, dim1):
-            C[i, j] = A[i] * B[i, j]
-    return C
+            result[i, j] = row_matrix[i] * matrix[i, j]
+    return result
 
 
 def gradient(X, W, y):
@@ -184,13 +199,13 @@ def log_likelihood(X, W, y):
 
     return L
 
-
+@numba.vectorize
 def sigmoid(x):
     """
     Sigmoid function.
     """
 
     # result = 1. / (1. + np.exp(-x))
-    # result = 0.5 * (np.tanh(0.5 * x) + 1)
-    result = scipy.special.expit(x)
+    result = 0.5 * (np.tanh(0.5 * x) + 1)
+    #result = scipy.special.expit(x)
     return result
