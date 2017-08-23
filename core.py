@@ -5,6 +5,7 @@ from helpers import load_mlc_dataset, tic, toc
 from MlcLinReg import MlcLinReg
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
+sys.setcheckinterval(250)
 
 ti = tic()
 DATASET_FILENAME = "data\delicious_data.txt"
@@ -65,7 +66,7 @@ mlc = MlcLinReg(learning_rate=0.01,
                 batch_size=50,
                 grad_check=False,
                 sparse=True,
-                verbose=False)
+                verbose=True)
 mlc.fit(X_train, y_train)
 y_pred = mlc.predict(X_test)
 

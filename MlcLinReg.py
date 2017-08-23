@@ -13,7 +13,6 @@ This is an implementation of Linear Regression with SGD solver aiming at perform
 examples matrix is a sparse matrix
 """
 
-
 class MlcLinReg:
     def __init__(self,
                  learning_rate=0.0001,

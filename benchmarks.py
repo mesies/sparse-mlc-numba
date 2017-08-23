@@ -55,7 +55,7 @@ else:
 
 mlc = MlcClassifierChains(MlcLinReg,
                           learning_rate=0.01,
-                          iterations=150,
+                          iterations=50,
                           sparse=True,
                           verbose=False,
                           grad_check=False,

@@ -7,14 +7,13 @@ import numpy as np
 import scipy
 from scipy.sparse import csr_matrix
 from sklearn.datasets import load_svmlight_file
-
+import cython
 import tqdm
 from mathutil import gradient, log_likelihood, gradient_sp, log_likelihood_sp
 
 """
 This file contains helper functions
 """
-
 
 def load_mlc_dataset(
         filename,
@@ -37,6 +36,7 @@ def load_mlc_dataset(
                     1: Feature Dimensionality
                     2: Label Dimensionality
     """
+    print "Started Loading"
     f = open(filename, mode='rb')
 
     header_info = False
@@ -58,12 +58,12 @@ def load_mlc_dataset(
         LABEL_NUMBER = int(header_info[2])
 
         # Convert y to sparse array, Note : MultiLabelBinarizer() could be used
-        ult = np.zeros((DATASET_SIZE, LABEL_NUMBER))
-        for i in range(0, DATASET_SIZE):
+        ult = (np.zeros((DATASET_SIZE, LABEL_NUMBER)))
+        for i in xrange(0, DATASET_SIZE):
             temp = np.zeros(LABEL_NUMBER)
             temp[np.asarray(y[i], dtype=int)] = 1
             ult[i] = temp
-        y = scipy.sparse.csr_matrix(ult)
+        y = csr_matrix(ult)
 
     else:
         X, y = load_svmlight_file(
@@ -71,7 +71,7 @@ def load_mlc_dataset(
             multilabel=True,
         )
     f.close()
-
+    print "Finished Loading"
     return X, y, header_info
 
 

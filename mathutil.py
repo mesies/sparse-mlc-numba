@@ -7,10 +7,9 @@ from joblib import Parallel, delayed
 from numba import prange
 #'@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
 #as few lines as possible each time line_profiler is run a lambda is used
-profile = lambda f: f
+#profile = lambda f: f
 
 
-@profile
 def gradient_sp(X, W, y, result=''):
     """
        Gradient of log_likelihood
@@ -31,17 +30,16 @@ def gradient_sp(X, W, y, result=''):
     sdotp = dotp.T
 
     #(sigm(XW) - y) * X,T
-    inss = np.zeros((X.shape))
+    in_sum = np.zeros((X.shape))
     indrow, indcol = nonzero(X)
-    inss[indrow, indcol] = np.take(sdotp, indrow, axis=0)
+    in_sum[indrow, indcol] = np.take(sdotp, indrow, axis=0)
 
-    result = np.sum(inss, axis=0)
+    result = np.sum(in_sum, axis=0)
     #result = ne.evaluate('sum(inss, axis=0)')
 
     return result
 
 
-@profile
 def log_likelihood_sp(X, W, y, result=''):
 
     # -1 ^ y
