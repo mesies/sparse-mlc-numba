@@ -4,7 +4,7 @@ import scipy
 from scipy.sparse import csr_matrix, coo_matrix, csc_matrix
 import numexpr as ne
 from joblib import Parallel, delayed
-from numba import prange
+from numba import hsa
 #'@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
 #as few lines as possible each time line_profiler is run a lambda is used
 #profile = lambda f: f
@@ -71,6 +71,7 @@ def nonzero(x):
 
     nonzero_numb(indrow, indcol, x.data, x.indices, x.indptr, x.shape[0])
     return indrow, indcol
+
 
 @numba.jit('void(int32[:],int32[:], float64[:], int32[:], int32[:], int32)',
            nopython=True,

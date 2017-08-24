@@ -5,13 +5,13 @@ import mathutil
 from helpers import size
 import scipy.sparse
 from multiprocessing import Process
-from numba import prange
 
 
 """
 This is an implementation of Linear Regression with SGD solver aiming at performance when training
 examples matrix is a sparse matrix
 """
+
 
 class MlcLinReg:
     def __init__(self,
@@ -36,7 +36,6 @@ class MlcLinReg:
         self.velocity = velocity
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
-
 
         else:
             logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.DEBUG)
@@ -85,7 +84,7 @@ class MlcLinReg:
 
         logging.info("Commencing SGD")
         logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
-        epochloss = []
+        epoch_loss = []
         for epoch in np.arange(0, epochs):
             old_loss = np.inf
             # Shuffle X, y
@@ -97,7 +96,7 @@ class MlcLinReg:
 
                 loss = mathutil.log_likelihood(X=sampleX, y=sampley.T, W=self.w)
 
-                epochloss.append(loss)
+                epoch_loss.append(loss)
                 if np.abs(loss - old_loss) < tolerance:
                     break
                 old_loss = loss
@@ -105,8 +104,8 @@ class MlcLinReg:
                 gradient = mathutil.gradient(sampleX, self.w, sampley)
 
                 self.w = self.w - self.l * gradient
-            self.lossHistory.append(np.average(epochloss))
-            logging.info("Ening epoch %i, average loss -> %f", epoch, np.average(epochloss))
+            self.lossHistory.append(np.average(epoch_loss))
+            logging.info("Ending epoch %i, average loss -> %f", epoch, np.average(epoch_loss))
 
             # if np.abs(np.average(epochloss) - old_loss_ep):
             #     break
@@ -117,7 +116,7 @@ class MlcLinReg:
     def stochastic_gradient_descent_sparse(self, X, y, tolerance, epochs=2000, batch_size=10):
         logging.info("Commencing sparse-aware SGD")
         logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
-        epochloss = []
+        epoch_loss = []
         # learning rate e, momentum parameter a,
 
         for epoch in range(0, epochs):
@@ -133,7 +132,7 @@ class MlcLinReg:
                 loss = mathutil.log_likelihood_sp(X=sampleX, y=sampley, W=self.w)
                 gradient = mathutil.gradient_sp(sampleX, self.w, sampley)
 
-                epochloss.append(loss)
+                epoch_loss.append(loss)
                 grads.append(gradient)
 
                 if np.abs(loss - old_loss) < tolerance:
@@ -142,18 +141,18 @@ class MlcLinReg:
 
                 self.velocity = (self.alpha * self.velocity) - (self.l * gradient)
                 self.w = self.w + self.velocity
-            self.lossHistory.append(np.average(epochloss))
-            logging.info("Ending epoch %i, average loss -> %f Epoch gradient AVG -> %f", epoch, np.average(epochloss),
+            self.lossHistory.append(np.average(epoch_loss))
+            logging.info("Ending epoch %i, average loss -> %f Epoch gradient AVG -> %f", epoch, np.average(epoch_loss),
                          np.average(grads))
-            # if(np.average(epochloss) > old_loss_ep):
+            # if(np.average(epoch_loss) > old_loss_ep):
             #     break
             # old_loss_ep = np.average(epochloss)
 
         return self.w
 
-    def next_batch(self, X, y, batchSize):
-        for i in range(0, X.shape[0], int(batchSize)):
-            limit = (i + batchSize)
+    def next_batch(self, X, y, batch_size):
+        for i in range(0, X.shape[0], int(batch_size)):
+            limit = (i + batch_size)
             if limit > X.shape[0]: limit = X.shape[0]
             if scipy.sparse.issparse(X):
                 # 18/41 sec of execution
