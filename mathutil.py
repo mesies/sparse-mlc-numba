@@ -2,14 +2,14 @@ import numba
 import numpy as np
 import scipy
 from scipy.sparse import csr_matrix, coo_matrix, csc_matrix
-import numexpr as ne
-from joblib import Parallel, delayed
+import scipy.sparse as sp
 from numba import hsa
 #'@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
 #as few lines as possible each time line_profiler is run a lambda is used
-#profile = lambda f: f
+profile = lambda f: f
 
 
+@profile
 def gradient_sp(X, W, y, result=''):
     """
        Gradient of log_likelihood
@@ -30,16 +30,33 @@ def gradient_sp(X, W, y, result=''):
     sdotp = dotp.T
 
     #(sigm(XW) - y) * X,T
-    in_sum = np.zeros((X.shape))
-    indrow, indcol = nonzero(X)
-    in_sum[indrow, indcol] = np.take(sdotp, indrow, axis=0)
+    #in_sum = np.zeros((X.shape))
+    #indrow, indcol = nonzero(X)
+    #in_sum[indrow, indcol] = np.take(sdotp, indrow, axis=0)
 
-    result = np.sum(in_sum, axis=0)
-    #result = ne.evaluate('sum(inss, axis=0)')
+
+    # idea : csr -> data tou i row data[indptr[:i],indprt[i+1]
+
+    #(sigm(XW) - y) * X,T
+    in_sum = X.multiply(sdotp[:, np.newaxis]).A
+
+    #result = np.sum(in_sum, axis=0 )
+    result = np.zeros(X.shape[1], dtype=float)
+    sum_rows(in_sum, result, in_sum.shape[0], in_sum.shape[1])
+    #result = np.sum(in_sum, axis=0)
 
     return result
 
 
+@numba.jit('void(float64[:,:], float64[:], int64, int64)',
+           nopython=True,
+           cache=True)
+def sum_rows(x, result, dim0, dim1):
+    for i in range(0, dim0):
+        for j in range(0, dim1):
+            result[j] += x[i, j]
+
+#Optimised
 def log_likelihood_sp(X, W, y, result=''):
 
     # -1 ^ y
@@ -53,10 +70,11 @@ def log_likelihood_sp(X, W, y, result=''):
     xw_hat = np.zeros(signus.shape)
     xw_hat = multt(dotr, signus, xw_hat, signus.shape[0], signus.shape[1])
 
-    logg = -np.logaddexp(0, xw_hat)
+    logg = np.logaddexp(0, xw_hat)
 
     #Minus applied on summ function
-    result = summ(logg[:, 0], logg.shape[0])
+    result = summ(-logg[:, 0], logg.shape[0])
+    #result = np.sum(logg[:, None], axis=0)
     return result
 
 
@@ -68,23 +86,34 @@ def nonzero(x):
     """
     indrow = np.zeros((x.data.shape[0]), dtype=int)
     indcol = np.zeros((x.data.shape[0]), dtype=int)
-
-    nonzero_numb(indrow, indcol, x.data, x.indices, x.indptr, x.shape[0])
+    if isinstance(x, csr_matrix):
+        nonzero_numb(indrow, indcol, x.data, x.indices, x.indptr, x.shape[0], 1)
+    elif isinstance(x, csc_matrix):
+        nonzero_numb(indrow, indcol, x.data, x.indices, x.indptr, x.shape[1], 0)
     return indrow, indcol
 
 
-@numba.jit('void(int32[:],int32[:], float64[:], int32[:], int32[:], int32)',
+@numba.jit('void(int32[:],int32[:], float64[:], int32[:], int32[:], int32, int32)',
            nopython=True,
            cache=True)
-def nonzero_numb(resultrow, resultcol, data, indices, indptr, columns):
+def nonzero_numb(resultrow, resultcol, data, indices, indptr, columns, isitcsr):
     # column indices for column i is in indices[indptr[i]:indptr[i+1]]
-    h = 0
-    for i in range(0, columns):
-        ind = indices[indptr[i]:indptr[i+1]]
-        for j in ind:
-            resultrow[h] = i
-            resultcol[h] = j
-            h += 1
+    if isitcsr == 1:
+        h = 0
+        for i in range(0, columns):
+            ind = indices[indptr[i]:indptr[i+1]]
+            for j in ind:
+                resultrow[h] = i
+                resultcol[h] = j
+                h += 1
+    else:
+        h = 0
+        for i in range(0, columns):
+            ind = indices[indptr[i]:indptr[i + 1]]
+            for j in ind:
+                resultrow[h] = j
+                resultcol[h] = i
+                h += 1
 
 
 @numba.jit('float64(float64[:], int64)',

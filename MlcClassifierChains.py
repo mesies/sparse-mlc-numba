@@ -1,7 +1,10 @@
 import numpy as np
 import scipy.sparse as sp
 import logging
+from helpers import concatenate_csc_matrices_by_columns
 import tqdm
+from hyperdash.sdk import monitor
+profile = lambda f: f
 
 
 class MlcClassifierChains:
@@ -14,6 +17,7 @@ class MlcClassifierChains:
         self.label_dim = -1
         logging.basicConfig(level=logging.WARNING)
 
+    @profile
     def fit(self, X_train, y_train):
         """
         Train with X, y0 -> keep weights in self.weights[0]
@@ -27,13 +31,12 @@ class MlcClassifierChains:
         logging.info("       Commencing Classifier Chain training")
         logging.info("***************************************************")
 
-        X = X_train
-        y = y_train[:, 0]
+        X = (X_train)
+        y = (y_train[:, 0])
         clf = self.classifier_type(**self.args)
         clf.fit(X, y)
         self.trained.append(clf)
-        X = sp.hstack([X_train, y_train[:, 0]], format="csr")
-
+        X = concatenate_csc_matrices_by_columns(X_train, y_train[:, 0])
         self.label_dim = y_train.shape[1]
 
         for i in tqdm.trange(1, self.label_dim):
@@ -41,7 +44,9 @@ class MlcClassifierChains:
             clf = self.classifier_type(**self.args)
             clf.fit(X, y)
             self.trained.append(clf)
-            X = sp.hstack([X, y_train[:, i]], format="csr")
+
+            X = concatenate_csc_matrices_by_columns(X, y)
+            #if i == 20: exit(1)
 
     def predict(self, X_test):
         logging.info("***************************************************")

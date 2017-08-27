@@ -6,6 +6,8 @@ from helpers import size
 import scipy.sparse
 from multiprocessing import Process
 
+profile = lambda f: f
+
 
 """
 This is an implementation of Linear Regression with SGD solver aiming at performance when training
@@ -36,9 +38,9 @@ class MlcLinReg:
         self.velocity = velocity
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
-
         else:
             logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.DEBUG)
+
 
     def fit(self, X, y):
         logging.info("Started Fitting Dataa")
@@ -46,7 +48,7 @@ class MlcLinReg:
         if self.grad_check:
             logging.info("Commencing Gradient Check")
             logging.info(helpers.grad_check(X, self.w, y))
-            exit(0)
+            #exit(0)
         if self.sparse:
             self.w = self.stochastic_gradient_descent_sparse(X,
                                                              y,
@@ -113,6 +115,7 @@ class MlcLinReg:
 
         return self.w
 
+    @profile
     def stochastic_gradient_descent_sparse(self, X, y, tolerance, epochs=2000, batch_size=10):
         logging.info("Commencing sparse-aware SGD")
         logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
@@ -121,13 +124,9 @@ class MlcLinReg:
 
         for epoch in range(0, epochs):
             old_loss = np.inf
-            # # Shuffle X, y
-            # indexes = np.arange(np.shape(X)[0])
-            # np.random.shuffle(indexes)
-            # X = X[indexes,:]
-            # y = y[indexes,:]
+
             grads = []
-            for (sampleX, sampley) in self.next_batch(X, y, batch_size):
+            for (sampleX, sampley) in self.batch_iter(X, y, batch_size):
 
                 loss = mathutil.log_likelihood_sp(X=sampleX, y=sampley, W=self.w)
                 gradient = mathutil.gradient_sp(sampleX, self.w, sampley)
@@ -150,15 +149,21 @@ class MlcLinReg:
 
         return self.w
 
-    def next_batch(self, X, y, batch_size):
-        for i in range(0, X.shape[0], int(batch_size)):
-            limit = (i + batch_size)
-            if limit > X.shape[0]: limit = X.shape[0]
-            if scipy.sparse.issparse(X):
-                # 18/41 sec of execution
-                yield (X[i:limit, :], y[i:limit, :])
-            else:
-                yield (X[i:limit, :], y[i:limit])
+    def batch_iter(self, y, tx, batch_size, num_batches=1, shuffle=False):
+        data_size = (y).shape[0]
+
+        if shuffle:
+            shuffle_indices = np.random.permutation(np.arange(data_size))
+            shuffled_y = y[shuffle_indices]
+            shuffled_tx = tx[shuffle_indices]
+        else:
+            shuffled_y = y
+            shuffled_tx = tx
+        for batch_num in range(num_batches):
+            start_index = batch_num * batch_size
+            end_index = min((batch_num + 1) * batch_size, data_size)
+            if start_index != end_index:
+                yield shuffled_y[start_index:end_index], shuffled_tx[start_index:end_index]
 
     def predict(self, X):
         logging.info("Predicting Labels")

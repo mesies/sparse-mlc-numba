@@ -5,11 +5,13 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-from scipy.sparse import csr_matrix
+import scipy.sparse as sp
 from sklearn.datasets import load_svmlight_file
-import cython
 import tqdm
 from mathutil import gradient, log_likelihood, gradient_sp, log_likelihood_sp
+
+profile = lambda f: f
+
 
 """
 This file contains helper functions
@@ -36,7 +38,7 @@ def load_mlc_dataset(
                     1: Feature Dimensionality
                     2: Label Dimensionality
     """
-    print "Started Loading"
+    print("Started Loading Dataset")
     f = open(filename, mode='rb')
 
     header_info = False
@@ -48,7 +50,7 @@ def load_mlc_dataset(
 
         )
         if concatbias:
-            one = csr_matrix(np.ones(shape=(Xsparse.shape[0], 1)))
+            one = sp.csr_matrix(np.ones(shape=(Xsparse.shape[0], 1)))
             X = scipy.sparse.hstack([one, Xsparse], format="csr")
         else:
             X = Xsparse
@@ -59,11 +61,11 @@ def load_mlc_dataset(
 
         # Convert y to sparse array, Note : MultiLabelBinarizer() could be used
         ult = (np.zeros((DATASET_SIZE, LABEL_NUMBER)))
-        for i in xrange(0, DATASET_SIZE):
+        for i in range(0, DATASET_SIZE):
             temp = np.zeros(LABEL_NUMBER)
             temp[np.asarray(y[i], dtype=int)] = 1
             ult[i] = temp
-        y = csr_matrix(ult)
+        y = sp.csr_matrix(ult)
 
     else:
         X, y = load_svmlight_file(
@@ -71,7 +73,7 @@ def load_mlc_dataset(
             multilabel=True,
         )
     f.close()
-    print "Finished Loading"
+    print("Finished Loading")
     return X, y, header_info
 
 
@@ -195,5 +197,23 @@ def save_sparse_csr(filename,array):
 
 def load_sparse_csr(filename):
     loader = np.load(filename)
-    return csr_matrix((  loader['data'], loader['indices'], loader['indptr']),
-                         shape = loader['shape'])
+    return sp.csr_matrix((  loader['data'], loader['indices'], loader['indptr']),
+                         shape=loader['shape'])
+
+@profile
+def concatenate_csc_matrices_by_columns(matrix1, matrix2):
+
+    matrix1 = (matrix1).T.tocsr()
+    matrix2 = (matrix2).T.tocsr()
+
+    new_data = np.concatenate((matrix1.data, matrix2.data))
+    new_indices = np.concatenate((matrix1.indices, matrix2.indices))
+    new_ind_ptr = matrix2.indptr + len(matrix1.data)
+    new_ind_ptr = new_ind_ptr[1:]
+    new_ind_ptr = np.concatenate((matrix1.indptr, new_ind_ptr))
+
+    return sp.csr_matrix(
+        (new_data,
+         new_indices,
+         new_ind_ptr)
+    ).T.tocsr()

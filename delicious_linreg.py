@@ -5,7 +5,7 @@ from helpers import load_mlc_dataset, tic, toc
 from MlcLinReg import MlcLinReg
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
-from MlcClassifierChains import MlcClassifierChains
+sys.setcheckinterval(250)
 
 ti = tic()
 DATASET_FILENAME = "data\delicious_data.txt"
@@ -53,19 +53,35 @@ else:
     y_train = y[train_ind[:, 0]]
     y_test = y[test_ind[:, 0]]
 
-mlc = MlcClassifierChains(MlcLinReg,
-                          learning_rate=0.01,
-                          iterations=50,
-                          sparse=True,
-                          verbose=False,
-                          grad_check=False,
-                          batch_size=50,
-                          alpha=0.5,
-                          velocity=1)
+y_train = y_train[:, 0]
+y_test = y_test[:, 0]
+
+# 2. Implement Binary Logistic Regression Classifier
+#   2.1 Code likelihood
+#   2.2 Code Stochastic Gradient Descent with regards to dataset sparsity
+#
+# Notes : Code it like sklearn classifiers
+mlc = MlcLinReg(learning_rate=0.01,
+                iterations=1000,
+                batch_size=256,
+                grad_check=False,
+                sparse=True,
+                verbose=True,
+                velocity=0.9)
 mlc.fit(X_train, y_train)
-ypred = mlc.predict(X_test)
+y_pred = mlc.predict(X_test)
 
-from MlcScore import score_accuracy
-print score_accuracy(ypred, y_test)
-
+print("Score " + str(accuracy_score(y_true=y_test.toarray(), y_pred=y_pred)))
 toc(ti)
+# fig = plt.figure()
+#
+# plt.plot(np.arange(0, len(mlc.lossHistory)), mlc.lossHistory)
+# fig.suptitle("Training Loss")
+# plt.xlabel("Epoch #")
+# plt.ylabel("Loss")
+# plt.show()
+# 3. Implement Classifier Chains
+#   3.1 Code classifier chains with regards to interchangeable classifiers objects
+
+# 4. Implement Scoring Function
+#   4.1 Code Scoring function as described in report.pdf

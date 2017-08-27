@@ -8,18 +8,15 @@ ti = tic()
 DATASET_TRAIN_SET_FILENAME = "data\\rcv1x_train.txt"
 DATASET_TEST_SET_FILENAME = "data\\rcv1x_test.txt"
 
-DEBUG = 0
-DEBUG_DATASET_SIZE = 50
-
 try:
-    print "Attempting Load from local files"
+    print("Attempting Load from local files")
     X_train = (load_sparse_csr("xtrain.npz"))
     X_test = (load_sparse_csr("xtest.npz"))
     y_train = (load_sparse_csr("ytrain.npz"))
     y_test = (load_sparse_csr("ytest.npz"))
 except IOError:
-    print "Loading Failed"
-    print "Started loading from dataset"
+    print("Loading Failed")
+    print("Started loading from dataset")
     X_train, y_train, header_info_train = load_mlc_dataset(DATASET_TRAIN_SET_FILENAME,
                                                            header=True,
                                                            concatbias=True)
@@ -31,20 +28,20 @@ except IOError:
     save_sparse_csr("xtest", X_test)
     save_sparse_csr("ytrain", y_train)
     save_sparse_csr("ytest", y_test)
-print "Started Fitting"
+print("Started Fitting")
 mlc = MlcClassifierChains(MlcLinReg,
                           learning_rate=0.01,
-                          iterations=10,
+                          iterations=20,
                           sparse=True,
                           verbose=False,
                           grad_check=False,
-                          batch_size=25,
+                          batch_size=128,
                           alpha=0.5,
-                          velocity=1)
+                          velocity=0.9)
 mlc.fit(X_train, y_train)
-ypred = mlc.predict(X_test)
+y_pred = mlc.predict(X_test)
 
 from MlcScore import score_accuracy
-print score_accuracy(ypred, y_test)
+(score_accuracy(y_pred, y_test))
 
 toc(ti)
