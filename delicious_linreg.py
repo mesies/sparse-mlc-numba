@@ -1,11 +1,7 @@
-import sys
-
 import numpy as np
 from helpers import load_mlc_dataset, tic, toc
 from MlcLinReg import MlcLinReg
 from sklearn.metrics import accuracy_score
-import matplotlib.pyplot as plt
-sys.setcheckinterval(250)
 
 ti = tic()
 DATASET_FILENAME = "data\delicious_data.txt"

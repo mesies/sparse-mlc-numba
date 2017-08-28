@@ -1,4 +1,3 @@
-import numpy as np
 from helpers import load_mlc_dataset, tic, toc
 from MlcLinReg import MlcLinReg
 from MlcClassifierChains import MlcClassifierChains
@@ -14,6 +13,7 @@ try:
     X_test = (load_sparse_csr("xtest.npz"))
     y_train = (load_sparse_csr("ytrain.npz"))
     y_test = (load_sparse_csr("ytest.npz"))
+
 except IOError:
     print("Loading Failed")
     print("Started loading from dataset")
@@ -42,6 +42,7 @@ mlc.fit(X_train, y_train)
 y_pred = mlc.predict(X_test)
 
 from MlcScore import score_accuracy
-(score_accuracy(y_pred, y_test))
+
+print(score_accuracy(y_pred, y_test))
 
 toc(ti)

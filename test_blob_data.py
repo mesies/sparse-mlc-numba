@@ -1,11 +1,9 @@
+import numpy as np
+import sklearn
 from sklearn.metrics import accuracy_score
 
 import helpers
-import sklearn
-import logging
-import numpy as np
 from MlcLinReg import MlcLinReg
-import matplotlib.pyplot as plt
 
 (X, y) = sklearn.datasets.make_blobs(
     n_samples=1500,

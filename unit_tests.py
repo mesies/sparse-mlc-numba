@@ -1,14 +1,17 @@
 import unittest
+
 import numpy as np
-import mathutil
 import scipy.sparse as sp
+
+import mathutil
 from mathutil import nonzero as nz
-from scipy import sparse as sp
+
 
 class MyTestCase(unittest.TestCase):
     """
     Unit tests for some parts of the classifier.
     """
+
     def test_sum_rows(self):
         """
         Test mathutil.sum_rows
@@ -20,7 +23,7 @@ class MyTestCase(unittest.TestCase):
         result = np.zeros(shape=3)
 
         mathutil.sum_rows(A, result, A.shape[0], A.shape[1])
-        t = np.max(np.abs(result-np.sum(A, axis=0)))
+        t = np.max(np.abs(result - np.sum(A, axis=0)))
 
         self.assertEqual(t, 0)
 
@@ -28,7 +31,7 @@ class MyTestCase(unittest.TestCase):
         """
         Test helpers.concatenate_csc_matrices_by_columns
         """
-        from helpers import concatenate_csc_matrices_by_columns
+        from helpers import concatenate_csr_matrices_by_columns
         A = np.array([
             [1., 2., 3.],
             [0., -1., 1.],
@@ -44,12 +47,12 @@ class MyTestCase(unittest.TestCase):
             [1., 2., 3., 1.],
             [0., -1., 1., 2.],
             [3., 4., 5., 3.]])
-        D = concatenate_csc_matrices_by_columns(
+        D = concatenate_csr_matrices_by_columns(
             sp.csr_matrix(A),
             sp.csr_matrix(B.T)
         )
 
-        t = np.max(np.abs(C-D))
+        t = np.max(np.abs(C - D))
 
         self.assertEqual(t, 0)
 
@@ -70,10 +73,33 @@ class MyTestCase(unittest.TestCase):
         # A AND B / A OR B
         # 1 1 1 1 0 0 / 1 1 1 1 1 0 = 4/5 = 0.8
         self.assertAlmostEqual(score_accuracy(ypred, y), 0.8)
+        y = sp.csr_matrix([
+            [1, 1, 1]
+        ])
+        ypred = sp.csr_matrix([
+            [1, 1, 1]
+        ])
+        self.assertAlmostEqual(score_accuracy(ypred, y), 1)
+        y = sp.csr_matrix([
+            [1, 1, 1]
+        ])
+        ypred = sp.csr_matrix([
+            [0, 0, 0]
+        ])
+        self.assertAlmostEqual(score_accuracy(ypred, y), 0)
+        y = sp.csr_matrix([
+            [1, 1, 1, 0, 0]
+        ])
+        ypred = sp.csr_matrix([
+            [0, 0, 0, 0 ,0]
+        ])
+
+        #self.assertAlmostEqual(score_accuracy(ypred, y), 0.4)
+
+
+
 
     def test_non_zero_csc(self):
-
-
         y = np.zeros(12000, dtype=float)
         y[2] = 1.
         y[3] = 1
@@ -87,8 +113,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(t1, 0)
 
     def test_non_zero_csr(self):
-        from mathutil import nonzero as nz
-        from scipy import sparse as sp
+        from mathutil import nonzero as nzt
 
         y = np.zeros(12000, dtype=float)
         y[2] = 1.
@@ -98,7 +123,7 @@ class MyTestCase(unittest.TestCase):
         y1 = sp.csr_matrix(y)
         # t = np.max(np.abs(y.nonzero()-nz(y)))
         A = np.asarray(y1.nonzero())
-        B = np.asarray(nz(y1))
+        B = np.asarray(nzt(y1))
         t = np.max(np.abs(A - B))
         self.assertEqual(t, 0)
 
@@ -126,5 +151,7 @@ class MyTestCase(unittest.TestCase):
         t = np.max(np.abs(V - result))
 
         self.assertEqual(t, 0)
+
+
 if __name__ == '__main__':
     unittest.main()

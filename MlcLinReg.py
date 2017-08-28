@@ -2,10 +2,8 @@ import logging
 import numpy as np
 import helpers
 import mathutil
-from helpers import size
-import scipy.sparse
-from multiprocessing import Process
 
+# Comment when debuging with line profiler
 profile = lambda f: f
 
 
@@ -41,14 +39,13 @@ class MlcLinReg:
         else:
             logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.DEBUG)
 
-
     def fit(self, X, y):
         logging.info("Started Fitting Dataa")
         self.w = np.random.uniform(size=(X.shape[1],))
         if self.grad_check:
             logging.info("Commencing Gradient Check")
             logging.info(helpers.grad_check(X, self.w, y))
-            #exit(0)
+            exit(0)
         if self.sparse:
             self.w = self.stochastic_gradient_descent_sparse(X,
                                                              y,
@@ -149,8 +146,9 @@ class MlcLinReg:
 
         return self.w
 
-    def batch_iter(self, y, tx, batch_size, num_batches=1, shuffle=False):
-        data_size = (y).shape[0]
+    @staticmethod
+    def batch_iter(y, tx, batch_size, num_batches=1, shuffle=False):
+        data_size = y.shape[0]
 
         if shuffle:
             shuffle_indices = np.random.permutation(np.arange(data_size))
@@ -169,4 +167,4 @@ class MlcLinReg:
         logging.info("Predicting Labels")
         y = mathutil.sigmoid((X.dot(self.w)))
         y = np.around(y)
-        return (y)
+        return y

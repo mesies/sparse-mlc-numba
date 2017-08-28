@@ -10,8 +10,8 @@ from sklearn.datasets import load_svmlight_file
 import tqdm
 from mathutil import gradient, log_likelihood, gradient_sp, log_likelihood_sp
 
+# Uncomment when debugging with line_profiler
 profile = lambda f: f
-
 
 """
 This file contains helper functions
@@ -106,34 +106,33 @@ def grad_check(X, W, y):
     num_grad = np.zeros(W.shape[0])
     iterr = tqdm.trange(0, W.shape[0])
     # iterr = np.arange(0, W.shape[0])
-    for k in (iterr):
-        W_tmpP = np.zeros((W.shape))
+    for k in iterr:
+        W_tmpP = np.zeros(W.shape)
         W_tmpP[:] = W
 
-        W_tmpM = np.zeros(((W.shape)))
+        W_tmpM = np.zeros((W.shape))
         W_tmpM[:] = W
 
-        W_tmpP[k] = W_tmpP[k] + (epsilon)
+        W_tmpP[k] = W_tmpP[k] + epsilon
         if scipy.sparse.issparse(X):
             Ewplus = log_likelihood_sp(X, W_tmpP, y)
         else:
             Ewplus = log_likelihood(X, W_tmpP, y)
 
-        W_tmpM[k] = W_tmpM[k] - (epsilon)
+        W_tmpM[k] = W_tmpM[k] - epsilon
         if scipy.sparse.issparse(X):
             Ewminus = log_likelihood_sp(X, W_tmpM, y)
         else:
             Ewminus = log_likelihood(X, W_tmpM, y)
 
-
         num_grad[k] = np.divide((np.subtract(Ewplus, Ewminus)), np.multiply(2, epsilon))
     true_gradient.reshape((W.shape[0], 1))
     num_grad.reshape((W.shape[0], 1))
 
-    absmax = np.linalg.norm(true_gradient - num_grad) / np.linalg.norm(true_gradient + num_grad)
-    if absmax > 0.5 * 1e-2:
-        return 'WARNING: Failed Gradient Check ' + str(absmax)
-    return 'INFO: Successful Gradient Check ' + str(absmax)
+    abs_max = np.linalg.norm(true_gradient - num_grad) / np.linalg.norm(true_gradient + num_grad)
+    if abs_max > 0.5 * 1e-2:
+        return 'WARNING: Failed Gradient Check ' + str(abs_max)
+    return 'INFO: Successful Gradient Check ' + str(abs_max)
 
 
 def plot_linreg_results(X, W, y, preds, lossHistory):
@@ -190,22 +189,38 @@ def typu(x):
     print(type(x))
 
 
-#https://stackoverflow.com/questions/8955448/save-load-scipy-sparse-csr-matrix-in-portable-data-format
-def save_sparse_csr(filename,array):
-    np.savez(filename,data = array.data ,indices=array.indices,
-             indptr =array.indptr, shape=array.shape )
+def save_sparse_csr(filename, array):
+    """
+    Saves a sparse array in npz format in current directory.
+    :param filename:
+    :param array:
+    :return:
+    """
+    np.savez(filename, data=array.data, indices=array.indices,
+             indptr=array.indptr, shape=array.shape)
 
 
 def load_sparse_csr(filename):
+    """
+    Loads a sparse array from an npz file in current directory.
+    :param filename:
+    :return:
+    """
     loader = np.load(filename)
-    return sp.csr_matrix((  loader['data'], loader['indices'], loader['indptr']),
+    return sp.csr_matrix((loader['data'], loader['indices'], loader['indptr']),
                          shape=loader['shape'])
 
-@profile
-def concatenate_csc_matrices_by_columns(matrix1, matrix2):
 
-    matrix1 = (matrix1).T.tocsr()
-    matrix2 = (matrix2).T.tocsr()
+@profile
+def concatenate_csr_matrices_by_columns(matrix1, matrix2):
+    """
+    Concatenates two csr sparse matrices in a more efficient way than hstack
+    :param matrix1:
+    :param matrix2:
+    :return:
+    """
+    matrix1 = matrix1.T.tocsr()
+    matrix2 = matrix2.T.tocsr()
 
     new_data = np.concatenate((matrix1.data, matrix2.data))
     new_indices = np.concatenate((matrix1.indices, matrix2.indices))

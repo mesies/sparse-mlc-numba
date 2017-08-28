@@ -2,48 +2,50 @@ import numba
 import numpy as np
 import scipy
 from scipy.sparse import csr_matrix, coo_matrix, csc_matrix
-import scipy.sparse as sp
-from numba import hsa
-#'@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
-#as few lines as possible each time line_profiler is run a lambda is used
+
+
+# '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
+# as few lines as possible each time line_profiler is run a lambda is used
+# Comment when debugging with line profiler
 profile = lambda f: f
 
 
 @profile
-def gradient_sp(X, W, y, result=''):
+def gradient_sp(X, W, y):
     """
-       Gradient of log_likelihood
+       Gradient of log_likelihood optimised for sparse matrices.
        :param X: Training examples
        :param W: Weight vector
        :param y: True Categories of the training examples X
        :return: Gradient
        """
 
+    # sigm(XW) - y
+    dotp = sigmoid(X.dot(W))
 
-    #sigm(XW) - y
-    dotp = X.dot(W)
-    dotp = sigmoid(dotp)
-
+    sdotp = dotp.T
     if y.nnz != 0:
         resultrow, resultcol = nonzero(y)
-        dotp.T[resultrow] -= 1   #Because y[ind] = 1, if ind = y.nonzero()
-    sdotp = dotp.T
+        sdotp[resultrow] -= 1  # Because y[ind] = 1, if ind = y.nonzero()
 
-    #(sigm(XW) - y) * X,T
-    #in_sum = np.zeros((X.shape))
-    #indrow, indcol = nonzero(X)
-    #in_sum[indrow, indcol] = np.take(sdotp, indrow, axis=0)
+
+    # (sigm(XW) - y) * X,T
+
+    # in_sum = np.zeros((X.shape))
+    # indrow, indcol = nonzero(X)
+    # in_sum[indrow, indcol] = np.take(sdotp, indrow, axis=0)
 
 
     # idea : csr -> data tou i row data[indptr[:i],indprt[i+1]
 
-    #(sigm(XW) - y) * X,T
-    #in_sum = X.multiply(sdotp[:, np.newaxis]).A
-    in_sum = sparse_mult(X, sdotp)
-    #result = np.sum(in_sum, axis=0 )
+    # (sigm(XW) - y) * X,T
+    in_sum = X.multiply(sdotp[:, np.newaxis]).A
+    # in_sum = sparse_mult(X, sdotp)
+
+    # sum()
     result = np.zeros(X.shape[1], dtype=float)
-    sum_rows(in_sum, result, in_sum.shape[0], in_sum.shape[1])
-    #result = np.sum(in_sum, axis=0)
+    # sum_rows(in_sum, result, in_sum.shape[0], in_sum.shape[1])
+    result = np.sum(in_sum, axis=0)
 
     return result
 
@@ -53,12 +55,28 @@ def gradient_sp(X, W, y, result=''):
            cache=True,
            nogil=True)
 def sum_rows(x, result, dim0, dim1):
+    """
+    Numba function which returns sum of eaxh row e.g. [1 2 3] -> 6 [1 1],[2 2],[3 3] -> [2], [4], [6]
+    :param x:
+    :param result:
+    :param dim0:
+    :param dim1:
+    :return:
+    """
     for i in range(0, dim0):
         for j in range(0, dim1):
             result[j] += x[i, j]
 
-#Optimised
-def log_likelihood_sp(X, W, y, result=''):
+
+# Optimised
+def log_likelihood_sp(X, W, y):
+    """
+    Log loss sparse optimised function.
+    :param X:
+    :param W:
+    :param y:
+    :return:
+    """
 
     # -1 ^ y
     signus = np.ones(y.shape)
@@ -69,16 +87,26 @@ def log_likelihood_sp(X, W, y, result=''):
     # (XW) * (-1 ^ y)
     dotr = X.dot(W)
     xw_hat = np.zeros(signus.shape)
-    xw_hat = multt(dotr, signus, xw_hat, signus.shape[0], signus.shape[1])
+    multt(dotr, signus, xw_hat, signus.shape[0], signus.shape[1])
 
     logg = np.logaddexp(0, xw_hat)
 
-    #Minus applied on summ function
-    result = summ(-logg[:, 0], logg.shape[0])
-    #result = np.sum(logg[:, None], axis=0)
+    # Minus applied on summ function
+    result = 0.
+    summ(result, -logg[:, 0], logg.shape[0])
+    # result = np.sum(logg[:, None], axis=0)
     return result
 
+
 def sparse_mult(x, y_rows):
+    """
+    Element-wise multiplication of a sparse array by a row of values, meaning each row of sparse array x is multiplied
+    element-wise by y_rows.
+    Wrapper for special_mult
+    :param x:
+    :param y_rows:
+    :return:
+    """
     result = x.toarray()
     special_mult(result,
                  x.data,
@@ -90,6 +118,7 @@ def sparse_mult(x, y_rows):
                  np.zeros(x.data.shape[0], dtype=int)
                  )
     return result
+
 
 @numba.jit('void(float64[:,:], '
            'float64[:],'
@@ -111,18 +140,20 @@ def special_mult(result,
                  z_indcol
                  ):
     """
-    ONLY CSR
-    :param data:
+    See sparse_mult
+    :param result:
+    :param x_data:
+    :param x_shape0:
+    :param z_indrow:
+    :param z_indcol:
+    :param x_data:
     :param x_indices:
     :param x_indptr:
-    :param x_shape:
     :param y:
-    :param x_no_columns:
     :return:
     """
     indrow = z_indrow
     indcol = z_indcol
-
 
     # Same code as nonzero_numb because of a known numba bug
     h = 0
@@ -141,7 +172,7 @@ def special_mult(result,
 
 def nonzero(x):
     """
-    Returns indices of non zero elements of a scipy csr_matrix
+    Returns indices of non zero elements of a scipy csr_matrix, wrapper for nonzero_numb
     :param x: The matrix in question
     :return: row indices and column indices
     """
@@ -158,11 +189,22 @@ def nonzero(x):
            nopython=True,
            nogil=True)
 def nonzero_numb(resultrow, resultcol, data, indices, indptr, columns, isitcsr):
+    """
+    See nonzero
+    :param resultrow:
+    :param resultcol:
+    :param data:
+    :param indices:
+    :param indptr:
+    :param columns:
+    :param isitcsr:
+    :return:
+    """
     # column indices for column i is in indices[indptr[i]:indptr[i+1]]
     if isitcsr == 1:
         h = 0
         for i in range(0, columns):
-            ind = indices[indptr[i]:indptr[i+1]]
+            ind = indices[indptr[i]:indptr[i + 1]]
             for j in ind:
                 resultrow[h] = i
                 resultcol[h] = j
@@ -177,13 +219,14 @@ def nonzero_numb(resultrow, resultcol, data, indices, indptr, columns, isitcsr):
                 h += 1
 
 
-@numba.jit('float64(float64[:], int64)',
+@numba.jit('void(float64, float64[:], int64)',
            nopython=True,
            cache=True,
            nogil=True)
-def summ(x, sh):
+def summ(result, x, sh):
     """
     An optimised summation using Numba's JIT compiler
+    :param result:
     :param x:
     :param sh:
     :return:
@@ -191,10 +234,10 @@ def summ(x, sh):
     s = x[0]
     for i in range(1, sh):
         s = s + x[i]
-    return -s
+    result = -s
 
 
-@numba.jit('float64[:,:](float64[:], float64[:,:], float64[:,:], int64, int64)',
+@numba.jit('void(float64[:], float64[:,:], float64[:,:], int64, int64)',
            nopython=True,
            cache=True,
            nogil=True)
@@ -211,7 +254,6 @@ def multt(row_matrix, matrix, result, dim0, dim1):
     for i in range(0, dim0):
         for j in range(0, dim1):
             result[i, j] = row_matrix[i] * matrix[i, j]
-    return result
 
 
 def gradient(X, W, y):
@@ -225,7 +267,7 @@ def gradient(X, W, y):
     sig = (sigmoid(np.dot(X, W))).T - y
     assert sig.shape == y.shape
 
-    inss = (sig) * X.T
+    inss = sig * X.T
     assert inss.shape == X.T.shape
 
     result = np.sum(inss, axis=1)
@@ -278,18 +320,17 @@ def log_likelihood(X, W, y):
 
         dotr = X.dot(csr_matrix(W).T)
 
-        xw_hat = (dotr).multiply(signus)
+        xw_hat = dotr.multiply(signus)
 
         logg = -np.logaddexp(0, xw_hat.toarray())
         L = -np.sum(logg)
 
     else:
-        sign = (-1) ** (y)
+        sign = (-1) ** y
         xw_hat = sign * np.dot(X, W)
-        L = -np.sum(-np.logaddexp(0, (xw_hat)))
+        L = -np.sum(-np.logaddexp(0, xw_hat))
 
     return L
-
 
 @numba.vectorize
 def sigmoid(x):
@@ -299,5 +340,5 @@ def sigmoid(x):
 
     # result = 1. / (1. + np.exp(-x))
     result = 0.5 * (np.tanh(0.5 * x) + 1)
-    #result = scipy.special.expit(x)
+    # result = scipy.special.expit(x)
     return result

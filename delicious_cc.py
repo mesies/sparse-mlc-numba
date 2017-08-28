@@ -1,13 +1,11 @@
-import sys
-
 import numpy as np
-from helpers import load_mlc_dataset, tic, toc
-from MlcLinReg import MlcLinReg
-from sklearn.metrics import accuracy_score
-import matplotlib.pyplot as plt
-from MlcClassifierChains import MlcClassifierChains
-profile = lambda f: f
 
+from MlcClassifierChains import MlcClassifierChains
+from MlcLinReg import MlcLinReg
+from helpers import load_mlc_dataset, tic, toc
+
+# Comment when debuging with line profiler
+profile = lambda f: f
 
 ti = tic()
 DATASET_FILENAME = "data\delicious_data.txt"
@@ -55,19 +53,21 @@ else:
     y_train = y[train_ind[:, 0]]
     y_test = y[test_ind[:, 0]]
 
+# Batch size 128, 256 causes overflow
 mlc = MlcClassifierChains(MlcLinReg,
                           learning_rate=0.01,
                           iterations=50,
                           sparse=True,
                           verbose=False,
                           grad_check=False,
-                          batch_size=512,
+                          batch_size=127,
                           alpha=0.5,
-                          velocity=1)
+                          velocity=0.9)
 mlc.fit(X_train, y_train)
 y_pred = mlc.predict(X_test)
 
 from MlcScore import score_accuracy
+
 print(score_accuracy(y_pred, y_test))
 
 toc(ti)
