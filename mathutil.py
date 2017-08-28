@@ -38,8 +38,8 @@ def gradient_sp(X, W, y, result=''):
     # idea : csr -> data tou i row data[indptr[:i],indprt[i+1]
 
     #(sigm(XW) - y) * X,T
-    in_sum = X.multiply(sdotp[:, np.newaxis]).A
-
+    #in_sum = X.multiply(sdotp[:, np.newaxis]).A
+    in_sum = sparse_mult(X, sdotp)
     #result = np.sum(in_sum, axis=0 )
     result = np.zeros(X.shape[1], dtype=float)
     sum_rows(in_sum, result, in_sum.shape[0], in_sum.shape[1])
@@ -50,7 +50,8 @@ def gradient_sp(X, W, y, result=''):
 
 @numba.jit('void(float64[:,:], float64[:], int64, int64)',
            nopython=True,
-           cache=True)
+           cache=True,
+           nogil=True)
 def sum_rows(x, result, dim0, dim1):
     for i in range(0, dim0):
         for j in range(0, dim1):
@@ -77,6 +78,66 @@ def log_likelihood_sp(X, W, y, result=''):
     #result = np.sum(logg[:, None], axis=0)
     return result
 
+def sparse_mult(x, y_rows):
+    result = x.toarray()
+    special_mult(result,
+                 x.data,
+                 x.indices,
+                 x.indptr,
+                 x.shape[0],
+                 y_rows,
+                 np.zeros(x.data.shape[0], dtype=int),
+                 np.zeros(x.data.shape[0], dtype=int)
+                 )
+    return result
+
+@numba.jit('void(float64[:,:], '
+           'float64[:],'
+           'int32[:], '
+           'int32[:], '
+           'int32,'
+           'float64[:], '
+           'int32[:], '
+           'int32[:])',
+           nopython=True,
+           nogil=True)
+def special_mult(result,
+                 x_data,
+                 x_indices,
+                 x_indptr,
+                 x_shape0,
+                 y,
+                 z_indrow,
+                 z_indcol
+                 ):
+    """
+    ONLY CSR
+    :param data:
+    :param x_indices:
+    :param x_indptr:
+    :param x_shape:
+    :param y:
+    :param x_no_columns:
+    :return:
+    """
+    indrow = z_indrow
+    indcol = z_indcol
+
+
+    # Same code as nonzero_numb because of a known numba bug
+    h = 0
+    for i in range(0, x_shape0):
+        ind = x_indices[x_indptr[i]:x_indptr[i + 1]]
+        for j in ind:
+            indrow[h] = i
+            indcol[h] = j
+            h += 1
+
+    for k in range(0, len(indrow)):
+        i = indrow[k]
+        j = indcol[k]
+        result[i, j] = result[i, j] * y[j]
+
 
 def nonzero(x):
     """
@@ -95,7 +156,7 @@ def nonzero(x):
 
 @numba.jit('void(int32[:],int32[:], float64[:], int32[:], int32[:], int32, int32)',
            nopython=True,
-           cache=True)
+           nogil=True)
 def nonzero_numb(resultrow, resultcol, data, indices, indptr, columns, isitcsr):
     # column indices for column i is in indices[indptr[i]:indptr[i+1]]
     if isitcsr == 1:
@@ -118,7 +179,8 @@ def nonzero_numb(resultrow, resultcol, data, indices, indptr, columns, isitcsr):
 
 @numba.jit('float64(float64[:], int64)',
            nopython=True,
-           cache=True)
+           cache=True,
+           nogil=True)
 def summ(x, sh):
     """
     An optimised summation using Numba's JIT compiler
@@ -134,7 +196,8 @@ def summ(x, sh):
 
 @numba.jit('float64[:,:](float64[:], float64[:,:], float64[:,:], int64, int64)',
            nopython=True,
-           cache=True)
+           cache=True,
+           nogil=True)
 def multt(row_matrix, matrix, result, dim0, dim1):
     """
     Optimised matrix element-wise multiplication when one matrix
@@ -226,6 +289,7 @@ def log_likelihood(X, W, y):
         L = -np.sum(-np.logaddexp(0, (xw_hat)))
 
     return L
+
 
 @numba.vectorize
 def sigmoid(x):

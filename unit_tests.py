@@ -2,7 +2,8 @@ import unittest
 import numpy as np
 import mathutil
 import scipy.sparse as sp
-
+from mathutil import nonzero as nz
+from scipy import sparse as sp
 
 class MyTestCase(unittest.TestCase):
     """
@@ -71,8 +72,7 @@ class MyTestCase(unittest.TestCase):
         self.assertAlmostEqual(score_accuracy(ypred, y), 0.8)
 
     def test_non_zero_csc(self):
-        from mathutil import nonzero as nz
-        from scipy import sparse as sp
+
 
         y = np.zeros(12000, dtype=float)
         y[2] = 1.
@@ -102,5 +102,29 @@ class MyTestCase(unittest.TestCase):
         t = np.max(np.abs(A - B))
         self.assertEqual(t, 0)
 
+    def test_row_mult(self):
+        # (sigm(XW) - y) * X,T
+        # in_sum = X.multiply(sdotp[:, np.newaxis]).A
+
+        A = sp.csr_matrix(np.array([
+            [1., 1., 1.],
+            [1., 0., 0.],
+            [0., 0., 1.],
+            [1., 1., 1.]
+        ]))
+
+        B = np.array(
+            [1., 2., 3.]
+        )
+        C = sp.csr_matrix(B)
+
+        from mathutil import sparse_mult
+        result = sparse_mult(A, B)
+
+        V = A.multiply(C).A
+
+        t = np.max(np.abs(V - result))
+
+        self.assertEqual(t, 0)
 if __name__ == '__main__':
     unittest.main()
