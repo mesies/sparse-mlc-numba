@@ -1,8 +1,9 @@
 import numpy as np
-
+import scipy.sparse as sp
 from MlcClassifierChains import MlcClassifierChains
 from MlcLinReg import MlcLinReg
 from helpers import load_mlc_dataset, tic, toc
+from MlcScore import score_accuracy
 
 # Comment when debuging with line profiler
 profile = lambda f: f
@@ -12,9 +13,6 @@ DATASET_FILENAME = "data\delicious_data.txt"
 DATASET_TRAIN_SET_FILENAME = "data\delicious_trSplit.txt"
 DATASET_TEST_SET_FILENAME = "data\delicious_tstSplit.txt"
 
-#   Debug Options
-DEBUG = 0
-DEBUG_DATASET_SIZE = 50
 
 # 1. Load dataset
 #   1.1 Load data from delicious dataset, also use sklearn's sparse data structures.
@@ -40,33 +38,25 @@ f2.close()
 train_ind = train_ind - 1
 test_ind = test_ind - 1
 
-if DEBUG == 1:
-    X_train = X[train_ind[:(DEBUG_DATASET_SIZE * 4), 0]]
-    X_test = X[test_ind[:DEBUG_DATASET_SIZE, 0]]
+X_train = X[train_ind[:, 0]]
+X_test = X[test_ind[:, 0]]
 
-    y_train = y[train_ind[:DEBUG_DATASET_SIZE * 4, 0]]
-    y_test = y[test_ind[:DEBUG_DATASET_SIZE, 0]]
-else:
-    X_train = X[train_ind[:, 0]]
-    X_test = X[test_ind[:, 0]]
+y_train = y[train_ind[:, 0]]
+y_test = y[test_ind[:, 0]]
 
-    y_train = y[train_ind[:, 0]]
-    y_test = y[test_ind[:, 0]]
-
-# Batch size 128, 256 causes overflow
 mlc = MlcClassifierChains(MlcLinReg,
-                          learning_rate=0.01,
-                          iterations=50,
+                          learning_rate=0.001,
+                          iterations=100,
                           sparse=True,
                           verbose=False,
                           grad_check=False,
-                          batch_size=127,
+                          batch_size=128,
                           alpha=0.5,
                           velocity=0.9)
-mlc.fit(X_train, y_train)
-y_pred = mlc.predict(X_test)
 
-from MlcScore import score_accuracy
+mlc.fit(X_train, y_train)
+
+y_pred = mlc.predict(X_test)
 
 print(score_accuracy(y_pred, y_test))
 

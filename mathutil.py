@@ -3,7 +3,6 @@ import numpy as np
 import scipy
 from scipy.sparse import csr_matrix, coo_matrix, csc_matrix
 
-
 # '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
 # as few lines as possible each time line_profiler is run a lambda is used
 # Comment when debugging with line profiler
@@ -28,24 +27,11 @@ def gradient_sp(X, W, y):
         resultrow, resultcol = nonzero(y)
         sdotp[resultrow] -= 1  # Because y[ind] = 1, if ind = y.nonzero()
 
-
     # (sigm(XW) - y) * X,T
-
-    # in_sum = np.zeros((X.shape))
-    # indrow, indcol = nonzero(X)
-    # in_sum[indrow, indcol] = np.take(sdotp, indrow, axis=0)
-
-
-    # idea : csr -> data tou i row data[indptr[:i],indprt[i+1]
-
-    # (sigm(XW) - y) * X,T
-    in_sum = X.multiply(sdotp[:, np.newaxis]).A
-    # in_sum = sparse_mult(X, sdotp)
-
-    # sum()
-    result = np.zeros(X.shape[1], dtype=float)
-    # sum_rows(in_sum, result, in_sum.shape[0], in_sum.shape[1])
-    result = np.sum(in_sum, axis=0)
+    # X.multiply(sdotp[:, np.newaxis]) is sparse so a significant speedup was achieved by exploiting this fact when
+    # computing its sum below
+    in_sum = scipy.sparse.csr_matrix(X.multiply(sdotp[:, np.newaxis]))
+    result = in_sum.sum(axis=0).A1
 
     return result
 
@@ -81,13 +67,13 @@ def log_likelihood_sp(X, W, y):
     # -1 ^ y
     signus = np.ones(y.shape)
     if y.nnz != 0:
-        resultrow, resultcol = nonzero(y)
-        signus[resultrow] = -1
+        result_row, result_col = nonzero(y)
+        signus[result_row] = -1
 
     # (XW) * (-1 ^ y)
-    dotr = X.dot(W)
+    xw = X.dot(W)
     xw_hat = np.zeros(signus.shape)
-    multt(dotr, signus, xw_hat, signus.shape[0], signus.shape[1])
+    multt(xw, signus, xw_hat, signus.shape[0], signus.shape[1])
 
     logg = np.logaddexp(0, xw_hat)
 
@@ -96,78 +82,6 @@ def log_likelihood_sp(X, W, y):
     summ(result, -logg[:, 0], logg.shape[0])
     # result = np.sum(logg[:, None], axis=0)
     return result
-
-
-def sparse_mult(x, y_rows):
-    """
-    Element-wise multiplication of a sparse array by a row of values, meaning each row of sparse array x is multiplied
-    element-wise by y_rows.
-    Wrapper for special_mult
-    :param x:
-    :param y_rows:
-    :return:
-    """
-    result = x.toarray()
-    special_mult(result,
-                 x.data,
-                 x.indices,
-                 x.indptr,
-                 x.shape[0],
-                 y_rows,
-                 np.zeros(x.data.shape[0], dtype=int),
-                 np.zeros(x.data.shape[0], dtype=int)
-                 )
-    return result
-
-
-@numba.jit('void(float64[:,:], '
-           'float64[:],'
-           'int32[:], '
-           'int32[:], '
-           'int32,'
-           'float64[:], '
-           'int32[:], '
-           'int32[:])',
-           nopython=True,
-           nogil=True)
-def special_mult(result,
-                 x_data,
-                 x_indices,
-                 x_indptr,
-                 x_shape0,
-                 y,
-                 z_indrow,
-                 z_indcol
-                 ):
-    """
-    See sparse_mult
-    :param result:
-    :param x_data:
-    :param x_shape0:
-    :param z_indrow:
-    :param z_indcol:
-    :param x_data:
-    :param x_indices:
-    :param x_indptr:
-    :param y:
-    :return:
-    """
-    indrow = z_indrow
-    indcol = z_indcol
-
-    # Same code as nonzero_numb because of a known numba bug
-    h = 0
-    for i in range(0, x_shape0):
-        ind = x_indices[x_indptr[i]:x_indptr[i + 1]]
-        for j in ind:
-            indrow[h] = i
-            indcol[h] = j
-            h += 1
-
-    for k in range(0, len(indrow)):
-        i = indrow[k]
-        j = indcol[k]
-        result[i, j] = result[i, j] * y[j]
 
 
 def nonzero(x):
@@ -188,34 +102,34 @@ def nonzero(x):
 @numba.jit('void(int32[:],int32[:], float64[:], int32[:], int32[:], int32, int32)',
            nopython=True,
            nogil=True)
-def nonzero_numb(resultrow, resultcol, data, indices, indptr, columns, isitcsr):
+def nonzero_numb(result_row, result_col, data, indices, indptr, columns, iscsr):
     """
     See nonzero
-    :param resultrow:
-    :param resultcol:
+    :param result_row:
+    :param result_col:
     :param data:
     :param indices:
     :param indptr:
     :param columns:
-    :param isitcsr:
+    :param iscsr:
     :return:
     """
     # column indices for column i is in indices[indptr[i]:indptr[i+1]]
-    if isitcsr == 1:
+    if iscsr == 1:
         h = 0
         for i in range(0, columns):
             ind = indices[indptr[i]:indptr[i + 1]]
             for j in ind:
-                resultrow[h] = i
-                resultcol[h] = j
+                result_row[h] = i
+                result_col[h] = j
                 h += 1
     else:
         h = 0
         for i in range(0, columns):
             ind = indices[indptr[i]:indptr[i + 1]]
             for j in ind:
-                resultrow[h] = j
-                resultcol[h] = i
+                result_row[h] = j
+                result_col[h] = i
                 h += 1
 
 
@@ -332,7 +246,8 @@ def log_likelihood(X, W, y):
 
     return L
 
-@numba.vectorize
+
+@numba.vectorize(['float64(float64)'], target='cpu')
 def sigmoid(x):
     """
     Sigmoid function.

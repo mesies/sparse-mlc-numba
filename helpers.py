@@ -17,7 +17,6 @@ profile = lambda f: f
 This file contains helper functions
 """
 
-
 def load_mlc_dataset(
         filename,
         header=True,
@@ -61,12 +60,18 @@ def load_mlc_dataset(
         LABEL_NUMBER = int(header_info[2])
 
         # Convert y to sparse array, Note : MultiLabelBinarizer() could be used
-        ult = (np.zeros((DATASET_SIZE, LABEL_NUMBER)))
-        for i in range(0, DATASET_SIZE):
-            temp = np.zeros(LABEL_NUMBER)
-            temp[np.asarray(y[i], dtype=int)] = 1
-            ult[i] = temp
-        y = sp.csr_matrix(ult)
+        # s = 0
+        # for i in y:
+        #     s += len(i)
+
+        # data = np.ones((s))
+        # indrow = np.arange(0, X.shape[0])
+
+        ult = (sp.lil_matrix((DATASET_SIZE, LABEL_NUMBER)))
+        for i in tqdm.trange(0, DATASET_SIZE):
+            ind_of_labels = np.asarray(y[i], dtype=int)
+            ult[i, ind_of_labels] = 1
+        y = ult.asformat('csr')
 
     else:
         X, y = load_svmlight_file(
@@ -219,17 +224,28 @@ def concatenate_csr_matrices_by_columns(matrix1, matrix2):
     :param matrix2:
     :return:
     """
-    matrix1 = matrix1.T.tocsr()
-    matrix2 = matrix2.T.tocsr()
+    csr = isinstance(matrix1, scipy.sparse.csr_matrix)
+    if csr:
+        matrix1 = matrix1.T.asformat('csr')
+        matrix2 = matrix2.T.asformat('csr')
+    else:
+        matrix1 = matrix1.T
+        matrix2 = matrix2.T
 
     new_data = np.concatenate((matrix1.data, matrix2.data))
     new_indices = np.concatenate((matrix1.indices, matrix2.indices))
     new_ind_ptr = matrix2.indptr + len(matrix1.data)
     new_ind_ptr = new_ind_ptr[1:]
     new_ind_ptr = np.concatenate((matrix1.indptr, new_ind_ptr))
-
-    return sp.csr_matrix(
-        (new_data,
-         new_indices,
-         new_ind_ptr)
-    ).T.tocsr()
+    if csr:
+        return sp.csr_matrix(
+            (new_data,
+             new_indices,
+             new_ind_ptr)
+        ).T.asformat('csr')
+    else:
+        return sp.csr_matrix(
+            (new_data,
+             new_indices,
+             new_ind_ptr)
+        ).T.asformat('csc')

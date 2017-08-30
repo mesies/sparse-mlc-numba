@@ -51,10 +51,11 @@ class MyTestCase(unittest.TestCase):
             sp.csr_matrix(A),
             sp.csr_matrix(B.T)
         )
-
-        t = np.max(np.abs(C - D))
-
-        self.assertEqual(t, 0)
+        t = -1
+        try:
+            t = np.max(np.abs(C - D))
+        finally:
+            self.assertEqual(t, 0)
 
     def test_cc_score(self):
         """
@@ -126,32 +127,6 @@ class MyTestCase(unittest.TestCase):
         B = np.asarray(nzt(y1))
         t = np.max(np.abs(A - B))
         self.assertEqual(t, 0)
-
-    def test_row_mult(self):
-        # (sigm(XW) - y) * X,T
-        # in_sum = X.multiply(sdotp[:, np.newaxis]).A
-
-        A = sp.csr_matrix(np.array([
-            [1., 1., 1.],
-            [1., 0., 0.],
-            [0., 0., 1.],
-            [1., 1., 1.]
-        ]))
-
-        B = np.array(
-            [1., 2., 3.]
-        )
-        C = sp.csr_matrix(B)
-
-        from mathutil import sparse_mult
-        result = sparse_mult(A, B)
-
-        V = A.multiply(C).A
-
-        t = np.max(np.abs(V - result))
-
-        self.assertEqual(t, 0)
-
 
 if __name__ == '__main__':
     unittest.main()

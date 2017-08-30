@@ -4,7 +4,7 @@ from scipy import logical_and, logical_or
 
 def score_accuracy(ypredicted, yreal):
     """
-    score = 1/N sum((y AND ypred)/(y OR ypred)))
+    score = sum((y AND ypred)/(y OR ypred)))
     :param ypredicted:
     :param yreal:
     :return:

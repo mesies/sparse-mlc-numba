@@ -2,17 +2,20 @@ from helpers import load_mlc_dataset, tic, toc
 from MlcLinReg import MlcLinReg
 from MlcClassifierChains import MlcClassifierChains
 from helpers import save_sparse_csr, load_sparse_csr
-
+import scipy.sparse as sp
 ti = tic()
-DATASET_TRAIN_SET_FILENAME = "data\\rcv1x_train.txt"
-DATASET_TEST_SET_FILENAME = "data\\rcv1x_test.txt"
+DATASET_TRAIN_SET_FILENAME = "data\\deliciousLarge_train.txt"
+DATASET_TEST_SET_FILENAME = "data\\deliciousLarge_test.txt"
+# DATASET_TRAIN_SET_FILENAME = "data\\rcv1x_train.txt"
+# DATASET_TEST_SET_FILENAME = "data\\rcv1x_test.txt"
+
 
 try:
     print("Attempting Load from local files")
-    X_train = (load_sparse_csr("xtrain.npz"))
-    X_test = (load_sparse_csr("xtest.npz"))
-    y_train = (load_sparse_csr("ytrain.npz"))
-    y_test = (load_sparse_csr("ytest.npz"))
+    X_train = (load_sparse_csr("xtrain_big.npz"))
+    X_test = (load_sparse_csr("xtest_big.npz"))
+    y_train = (load_sparse_csr("ytrain_big.npz"))
+    y_test = (load_sparse_csr("ytest_big.npz"))
 
 except IOError:
     print("Loading Failed")
@@ -24,10 +27,11 @@ except IOError:
     X_test, y_test, header_info_train = load_mlc_dataset(DATASET_TRAIN_SET_FILENAME,
                                                          header=True,
                                                          concatbias=True)
-    save_sparse_csr("xtrain", X_train)
-    save_sparse_csr("xtest", X_test)
-    save_sparse_csr("ytrain", y_train)
-    save_sparse_csr("ytest", y_test)
+    save_sparse_csr("xtrain_big", X_train)
+    save_sparse_csr("xtest_big", X_test)
+    save_sparse_csr("ytrain_big", y_train)
+    save_sparse_csr("ytest_big", y_test)
+
 print("Started Fitting")
 mlc = MlcClassifierChains(MlcLinReg,
                           learning_rate=0.01,

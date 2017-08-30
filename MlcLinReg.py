@@ -40,12 +40,21 @@ class MlcLinReg:
             logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.DEBUG)
 
     def fit(self, X, y):
+        """
+        Fits the classifier using X and y as training examples
+        :param X:
+        :param y:
+        :return:
+        """
+
         logging.info("Started Fitting Dataa")
         self.w = np.random.uniform(size=(X.shape[1],))
+
         if self.grad_check:
             logging.info("Commencing Gradient Check")
             logging.info(helpers.grad_check(X, self.w, y))
             exit(0)
+
         if self.sparse:
             self.w = self.stochastic_gradient_descent_sparse(X,
                                                              y,
@@ -58,58 +67,6 @@ class MlcLinReg:
                                                       epochs=self.iterations,
                                                       tolerance=1e-3,
                                                       batch_size=self.batch_size)
-        return self.w
-
-    def gradient_decent(self, X, y, tolerance=1e-3, epochs=10000):
-        old_loss = np.inf
-        for epoch in np.arange(0, epochs):
-
-            logging.info("Commencing next epoch %i", epoch)
-
-            gradient = mathutil.gradient(X, self.w, y)
-            loss = mathutil.log_likelihood(X, self.w, y)
-            self.lossHistory.append(loss)
-            logging.info("epoch #{}, loss={} , gradient={}".format(epoch + 1, loss, gradient))
-
-            if np.abs(loss - old_loss) < tolerance:
-                break
-            old_loss = loss
-
-            self.w = self.w - self.l * gradient
-
-        return self.w
-
-    def stochastic_gradient_descent(self, X, y, tolerance, epochs=2000, batch_size=10):
-
-        logging.info("Commencing SGD")
-        logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
-        epoch_loss = []
-        for epoch in np.arange(0, epochs):
-            old_loss = np.inf
-            # Shuffle X, y
-            indexes = np.arange(np.shape(X)[0])
-            np.random.shuffle(indexes)
-            X = X[indexes, :]
-            y = y[indexes]
-            for (sampleX, sampley) in self.next_batch(X, y, batch_size):
-
-                loss = mathutil.log_likelihood(X=sampleX, y=sampley.T, W=self.w)
-
-                epoch_loss.append(loss)
-                if np.abs(loss - old_loss) < tolerance:
-                    break
-                old_loss = loss
-
-                gradient = mathutil.gradient(sampleX, self.w, sampley)
-
-                self.w = self.w - self.l * gradient
-            self.lossHistory.append(np.average(epoch_loss))
-            logging.info("Ending epoch %i, average loss -> %f", epoch, np.average(epoch_loss))
-
-            # if np.abs(np.average(epochloss) - old_loss_ep):
-            #     break
-            # old_loss_ep = np.average(epochloss)
-
         return self.w
 
     @profile
@@ -146,8 +103,8 @@ class MlcLinReg:
 
         return self.w
 
-    @staticmethod
-    def batch_iter(y, tx, batch_size, num_batches=1, shuffle=False):
+    @profile
+    def batch_iter(self, y, tx, batch_size, num_batches=1, shuffle=False):
         data_size = y.shape[0]
 
         if shuffle:
@@ -161,10 +118,43 @@ class MlcLinReg:
             start_index = batch_num * batch_size
             end_index = min((batch_num + 1) * batch_size, data_size)
             if start_index != end_index:
-                yield shuffled_y[start_index:end_index], shuffled_tx[start_index:end_index]
+                yield shuffled_y[start_index:end_index, :], shuffled_tx[start_index:end_index, :]
 
     def predict(self, X):
         logging.info("Predicting Labels")
         y = mathutil.sigmoid((X.dot(self.w)))
         y = np.around(y)
         return y
+
+    def stochastic_gradient_descent(self, X, y, tolerance, epochs=2000, batch_size=10):
+
+        logging.info("Commencing SGD")
+        logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
+        epoch_loss = []
+        for epoch in np.arange(0, epochs):
+            old_loss = np.inf
+            # Shuffle X, y
+            indexes = np.arange(np.shape(X)[0])
+            np.random.shuffle(indexes)
+            X = X[indexes, :]
+            y = y[indexes]
+            for (sampleX, sampley) in self.batch_iter(X, y, batch_size):
+
+                loss = mathutil.log_likelihood(X=sampleX, y=sampley.T, W=self.w)
+
+                epoch_loss.append(loss)
+                if np.abs(loss - old_loss) < tolerance:
+                    break
+                old_loss = loss
+
+                gradient = mathutil.gradient(sampleX, self.w, sampley)
+
+                self.w = self.w - self.l * gradient
+            self.lossHistory.append(np.average(epoch_loss))
+            logging.info("Ending epoch %i, average loss -> %f", epoch, np.average(epoch_loss))
+
+            # if np.abs(np.average(epochloss) - old_loss_ep):
+            #     break
+            # old_loss_ep = np.average(epochloss)
+
+        return self.w
