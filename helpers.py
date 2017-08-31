@@ -17,6 +17,7 @@ profile = lambda f: f
 This file contains helper functions
 """
 
+
 def load_mlc_dataset(
         filename,
         header=True,
@@ -58,14 +59,6 @@ def load_mlc_dataset(
         DATASET_SIZE = int(header_info[0])
         FEATURE_NUMBER = int(header_info[1])
         LABEL_NUMBER = int(header_info[2])
-
-        # Convert y to sparse array, Note : MultiLabelBinarizer() could be used
-        # s = 0
-        # for i in y:
-        #     s += len(i)
-
-        # data = np.ones((s))
-        # indrow = np.arange(0, X.shape[0])
 
         ult = (sp.lil_matrix((DATASET_SIZE, LABEL_NUMBER)))
         for i in tqdm.trange(0, DATASET_SIZE):

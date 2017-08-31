@@ -35,25 +35,6 @@ def gradient_sp(X, W, y):
 
     return result
 
-
-@numba.jit('void(float64[:,:], float64[:], int64, int64)',
-           nopython=True,
-           cache=True,
-           nogil=True)
-def sum_rows(x, result, dim0, dim1):
-    """
-    Numba function which returns sum of eaxh row e.g. [1 2 3] -> 6 [1 1],[2 2],[3 3] -> [2], [4], [6]
-    :param x:
-    :param result:
-    :param dim0:
-    :param dim1:
-    :return:
-    """
-    for i in range(0, dim0):
-        for j in range(0, dim1):
-            result[j] += x[i, j]
-
-
 # Optimised
 def log_likelihood_sp(X, W, y):
     """
@@ -131,6 +112,24 @@ def nonzero_numb(result_row, result_col, data, indices, indptr, columns, iscsr):
                 result_row[h] = j
                 result_col[h] = i
                 h += 1
+
+
+@numba.jit('void(float64[:,:], float64[:], int64, int64)',
+           nopython=True,
+           cache=True,
+           nogil=True)
+def sum_rows(x, result, dim0, dim1):
+    """
+    Numba function which returns sum of eaxh row e.g. [1 2 3] -> 6 [1 1],[2 2],[3 3] -> [2], [4], [6]
+    :param x:
+    :param result:
+    :param dim0:
+    :param dim1:
+    :return:
+    """
+    for i in range(0, dim0):
+        for j in range(0, dim1):
+            result[j] += x[i, j]
 
 
 @numba.jit('void(float64, float64[:], int64)',
