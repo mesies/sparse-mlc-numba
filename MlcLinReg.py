@@ -3,7 +3,7 @@ import numpy as np
 import helpers
 import mathutil
 
-# Comment when debuging with line profiler
+# Comment when debugging with line profiler
 profile = lambda f: f
 
 

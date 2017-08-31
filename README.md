@@ -1,7 +1,7 @@
-# Multy-Label Classification in Sparse Matrices #
+# Multi-Label Classification in Sparse Matrices #
 
 
-### Enviroment and Setup ###
+### Environment and Setup ###
     * Python version -> 2.7.13
     * Dependencies ->
                         numba 0.34.0,

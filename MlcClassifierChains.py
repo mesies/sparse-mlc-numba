@@ -4,7 +4,7 @@ import logging
 from helpers import concatenate_csr_matrices_by_columns
 import tqdm
 
-# Comment when debuging with line profiler
+# Comment when debugging with line profiler
 profile = lambda f: f
 
 
@@ -66,7 +66,7 @@ class MlcClassifierChains:
     @profile
     def predict(self, X_test):
         """
-        Predicts te labes of X_test
+        Predicts the labels of X_test
         :param X_test:
         :return:
         """
