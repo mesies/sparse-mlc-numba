@@ -11,8 +11,8 @@ ti = tic()
 # DATASET_TRAIN_SET_FILENAME = "data\\rcv1x_train.txt"
 # DATASET_TEST_SET_FILENAME = "data\\rcv1x_test.txt"
 
-DATASET_TRAIN_SET_FILENAME = "data\\eurlex_train.txt"
-DATASET_TEST_SET_FILENAME = "data\\eurlex_test.txt"
+# DATASET_TRAIN_SET_FILENAME = "data\\eurlex_train.txt"
+# DATASET_TEST_SET_FILENAME = "data\\eurlex_test.txt"
 
 # DATASET_TRAIN_SET_FILENAME = "data\\amazonCat_train.txt"
 # DATASET_TEST_SET_FILENAME = "data\\amazonCat_test.txt"
@@ -23,6 +23,8 @@ DATASET_TEST_SET_FILENAME = "data\\eurlex_test.txt"
 # DATASET_TRAIN_SET_FILENAME = "data\\amazon-3M_train.txt"
 # DATASET_TEST_SET_FILENAME = "data\\amazon-3M_test.txt"
 
+DATASET_TRAIN_SET_FILENAME = "data\\wiki10_train.txt"
+DATASET_TEST_SET_FILENAME = "data\\wiki10_test.txt"
 # try:
 #     print("Attempting Load from local files")
 #     X_train = (load_sparse_csr("xtrain_big.npz"))
