@@ -4,7 +4,7 @@ import numpy as np
 import scipy.sparse as sp
 
 import mathutil
-from mathutil import nonzero as nz
+from mathutil import nonzero as nzt
 
 
 class MyTestCase(unittest.TestCase):
@@ -97,9 +97,6 @@ class MyTestCase(unittest.TestCase):
 
         #self.assertAlmostEqual(score_accuracy(ypred, y), 0.4)
 
-
-
-
     def test_non_zero_csc(self):
         y = np.zeros(12000, dtype=float)
         y[2] = 1.
@@ -109,12 +106,11 @@ class MyTestCase(unittest.TestCase):
         y2 = sp.csc_matrix(y)
         # t = np.max(np.abs(y.nonzero()-nz(y)))
         A = np.asarray(y2.nonzero())
-        B = np.asarray(nz(y2))
+        B = np.asarray(nzt(y2))
         t1 = np.max(np.abs(A - B))
         self.assertEqual(t1, 0)
 
     def test_non_zero_csr(self):
-        from mathutil import nonzero as nzt
 
         y = np.zeros(12000, dtype=float)
         y[2] = 1.
@@ -127,6 +123,45 @@ class MyTestCase(unittest.TestCase):
         B = np.asarray(nzt(y1))
         t = np.max(np.abs(A - B))
         self.assertEqual(t, 0)
+
+    def test_gradient(self):
+        DATASET_FILENAME = "data\delicious_data.txt"
+        DATASET_TRAIN_SET_FILENAME = "data\delicious_trSplit.txt"
+        DATASET_TEST_SET_FILENAME = "data\delicious_tstSplit.txt"
+
+        from helpers import load_mlc_dataset
+        X, y, header_info = load_mlc_dataset(DATASET_FILENAME,
+                                             header=True,
+                                             concatbias=True)
+        DATASET_SIZE = int(header_info[0])
+        FEATURE_NUMBER = int(header_info[1])
+        LABEL_NUMBER = int(header_info[2])
+
+        f1 = open(DATASET_TRAIN_SET_FILENAME)
+        train_ind = np.loadtxt(fname=f1, delimiter=" ", dtype=int)
+        f1.close()
+
+        f2 = open(DATASET_TEST_SET_FILENAME)
+        test_ind = np.loadtxt(fname=f2, delimiter=" ", dtype=int)
+        f2.close()
+
+        # Normalize train and test indexes
+        train_ind = train_ind - 1
+        test_ind = test_ind - 1
+
+        X_train = X[train_ind[:, 0]]
+        X_test = X[test_ind[:, 0]]
+
+        y_train = y[train_ind[:, 0]]
+        y_test = y[test_ind[:, 0]]
+
+        from MlcClassifierChains import MlcClassifierChains
+        from MlcLinReg import MlcLinReg
+        mlc = MlcLinReg(grad_check=True)
+
+        abs_max = mlc.fit(X_train, y_train[:, 0])
+        self.assertLessEqual(abs_max, 1e-4)
+
 
 if __name__ == '__main__':
     unittest.main()

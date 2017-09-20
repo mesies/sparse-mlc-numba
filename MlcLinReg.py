@@ -52,8 +52,8 @@ class MlcLinReg:
 
         if self.grad_check:
             logging.info("Commencing Gradient Check")
-            logging.info(helpers.grad_check(X, self.w, y))
-            exit(0)
+            abs_max = (helpers.grad_check(X, self.w, y))
+            return abs_max
 
         if self.sparse:
             self.w = self.stochastic_gradient_descent_sparse(X,
@@ -67,7 +67,7 @@ class MlcLinReg:
                                                       epochs=self.iterations,
                                                       tolerance=1e-3,
                                                       batch_size=self.batch_size)
-        return self.w
+        return self
 
     @profile
     def stochastic_gradient_descent_sparse(self, X, y, tolerance, epochs=2000, batch_size=10):

@@ -1,7 +1,7 @@
 # import autograd
 # import autograd.numpy as np
 import time
-
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
@@ -10,7 +10,7 @@ from sklearn.datasets import load_svmlight_file
 import tqdm
 from mathutil import gradient, log_likelihood, gradient_sp, log_likelihood_sp
 
-# Uncomment when debugging with line_profiler
+# Comment when debugging with line_profiler
 profile = lambda f: f
 
 """
@@ -39,7 +39,7 @@ def load_mlc_dataset(
                     1: Feature Dimensionality
                     2: Label Dimensionality
     """
-    print("Started Loading Dataset")
+    logging.info("Started Loading Dataset")
     f = open(filename, mode='rb')
 
     header_info = False
@@ -61,7 +61,9 @@ def load_mlc_dataset(
         LABEL_NUMBER = int(header_info[2])
 
         ult = (sp.lil_matrix((DATASET_SIZE, LABEL_NUMBER)))
-        for i in tqdm.trange(0, DATASET_SIZE):
+        # iterator = tqdm.trange(0, DATASET_SIZE)
+        iterator = range(0, DATASET_SIZE)
+        for i in iterator:
             ind_of_labels = np.asarray(y[i], dtype=int)
             ult[i, ind_of_labels] = 1
         y = ult.asformat('csr')
@@ -72,7 +74,7 @@ def load_mlc_dataset(
             multilabel=True,
         )
     f.close()
-    print("Finished Loading")
+    logging.info("Finished Loading")
     return X, y, header_info
 
 
@@ -88,6 +90,7 @@ def auto_gradient(X, W, y):
     return gradient(X, W, y)
 
 
+@profile
 def grad_check(X, W, y):
     """
     Checks the validation of gradient versus a numerical approximation
@@ -102,8 +105,8 @@ def grad_check(X, W, y):
 
     epsilon = 1e-6
     num_grad = np.zeros(W.shape[0])
-    iterr = tqdm.trange(0, W.shape[0])
-    # iterr = np.arange(0, W.shape[0])
+    # iterr = tqdm.trange(0, W.shape[0])
+    iterr = np.arange(0, W.shape[0])
     for k in iterr:
         W_tmpP = np.zeros(W.shape)
         W_tmpP[:] = W
@@ -128,9 +131,7 @@ def grad_check(X, W, y):
     num_grad.reshape((W.shape[0], 1))
 
     abs_max = np.linalg.norm(true_gradient - num_grad) / np.linalg.norm(true_gradient + num_grad)
-    if abs_max > 0.5 * 1e-2:
-        return 'WARNING: Failed Gradient Check ' + str(abs_max)
-    return 'INFO: Successful Gradient Check ' + str(abs_max)
+    return abs_max
 
 
 def plot_linreg_results(X, W, y, preds, lossHistory):

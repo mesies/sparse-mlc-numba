@@ -2,6 +2,7 @@ import numpy as np
 from helpers import load_mlc_dataset, tic, toc
 from MlcLinReg import MlcLinReg
 from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
 
 ti = tic()
 DATASET_FILENAME = "data\delicious_data.txt"
@@ -60,7 +61,7 @@ y_test = y_test[:, 0]
 mlc = MlcLinReg(learning_rate=0.01,
                 iterations=1000,
                 batch_size=256,
-                grad_check=False,
+                grad_check=True,
                 sparse=True,
                 verbose=True,
                 velocity=0.9)
@@ -69,13 +70,13 @@ y_pred = mlc.predict(X_test)
 
 print("Score " + str(accuracy_score(y_true=y_test.toarray(), y_pred=y_pred)))
 toc(ti)
-# fig = plt.figure()
-#
-# plt.plot(np.arange(0, len(mlc.lossHistory)), mlc.lossHistory)
-# fig.suptitle("Training Loss")
-# plt.xlabel("Epoch #")
-# plt.ylabel("Loss")
-# plt.show()
+fig = plt.figure()
+
+plt.plot(np.arange(0, len(mlc.lossHistory)), mlc.lossHistory)
+fig.suptitle("Training Loss")
+plt.xlabel("Epoch #")
+plt.ylabel("Loss")
+plt.show()
 # 3. Implement Classifier Chains
 #   3.1 Code classifier chains with regards to interchangeable classifiers objects
 

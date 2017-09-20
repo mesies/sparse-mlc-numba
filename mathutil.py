@@ -24,16 +24,29 @@ def gradient_sp(X, W, y):
 
     sdotp = dotp.T
     if y.nnz != 0:
+        # Originally it is required to compute
+        #             s = -1 ^ (1 - y_n)
+        # which for y_n = 1 , s = 1
+        # and for   y_n = 0 , s = -1
+        # Because y[ind] = 1, if ind = y.nonzero()
         resultrow, resultcol = nonzero(y)
-        sdotp[resultrow] -= 1  # Because y[ind] = 1, if ind = y.nonzero()
+        sdotp[resultrow] -= 1
 
     # (sigm(XW) - y) * X,T
     # X.multiply(sdotp[:, np.newaxis]) is sparse so a significant speedup was achieved by exploiting this fact when
     # computing its sum below
-    in_sum = scipy.sparse.csr_matrix(X.multiply(sdotp[:, np.newaxis]))
+    in_sum = (X.multiply(sdotp[:, np.newaxis]))
     result = in_sum.sum(axis=0).A1
 
+    # # (sigm(XW) - y) * X,T
+    # in_sum = X.multiply(sdotp[:, np.newaxis]).A
+    #
+    # # result = np.sum(in_sum, axis=0 )
+    # result = np.zeros(X.shape[1], dtype=float)
+    # sum_rows(in_sum, result, in_sum.shape[0], in_sum.shape[1])
+    # result = np.sum(in_sum, axis=0) # - 0.01 * np.linalg.norm(W)
     return result
+
 
 # Optimised
 def log_likelihood_sp(X, W, y):
@@ -60,8 +73,8 @@ def log_likelihood_sp(X, W, y):
 
     # Minus applied on summ function
     result = 0.
-    summ(result, -logg[:, 0], logg.shape[0])
-    # result = np.sum(logg[:, None], axis=0)
+    result = summ(result, -logg[:, 0], logg.shape[0])
+    # result = np.sum(logg[:, None], axis=0) - 0.5 * 0.01 * np.linalg.norm(W)
     return result
 
 
@@ -132,10 +145,10 @@ def sum_rows(x, result, dim0, dim1):
             result[j] += x[i, j]
 
 
-@numba.jit('void(float64, float64[:], int64)',
+@numba.jit('float64(float64, float64[:], int64)',
            nopython=True,
-           cache=True,
-           nogil=True)
+           cache=True
+           )
 def summ(result, x, sh):
     """
     An optimised summation using Numba's JIT compiler
@@ -148,7 +161,7 @@ def summ(result, x, sh):
     for i in range(1, sh):
         s = s + x[i]
     result = -s
-
+    return result
 
 @numba.jit('void(float64[:], float64[:,:], float64[:,:], int64, int64)',
            nopython=True,
@@ -204,14 +217,14 @@ def log_likelihood(X, W, y):
     =>
     Yn = log(sigmoid(X*W)) if t = 1
     Yn = log(1 - sigmoid(X*W) if t = 0
-    ^
+    AND
     1 - sigmoid(x) = sigmoid(-x)
     =>
     Yn = log(sigmoid(X*W)) if t = 1
     Yn = log(sigmoid((-1)*X*W) if t = 0
     =>
     Yn = log(sigmoid((-1)^(t-1) * (X*W))
-    ^
+    AND
     log(sigmoid(x)) = log(1 / 1 + exp(-x)) = -log(1 + exp(-x))
     =>
     L = -np.sum(-np.log(1 + np.exp(-((-1)**(1-t)) * np.dot(X, W))))

@@ -3,12 +3,16 @@ import scipy.sparse as sp
 import logging
 from helpers import concatenate_csr_matrices_by_columns
 import tqdm
+import MlcScore
+from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.externals import six
+from abc import ABCMeta, abstractmethod
 
 # Comment when debugging with line profiler
 profile = lambda f: f
 
 
-class MlcClassifierChains:
+class MlcClassifierChains(BaseEstimator):
     def __init__(self,
                  classifier,
                  **args):
@@ -16,6 +20,7 @@ class MlcClassifierChains:
         self.trained = []
         self.classifier_type = classifier
         self.label_dim = -1
+        self.lossHistory = []
         logging.basicConfig(level=logging.WARNING)
 
     @profile
@@ -31,6 +36,16 @@ class MlcClassifierChains:
         logging.info("***************************************************")
         logging.info("       Commencing Classifier Chain training")
         logging.info("***************************************************")
+
+        ##Shuffle Data
+        data_size = y_train.shape[0]
+
+        shuffle_indices = np.random.permutation(np.arange(data_size))
+        shuffled_y = y_train[shuffle_indices]
+        shuffled_tx = X_train[shuffle_indices]
+
+        X_train = shuffled_tx
+        y_train = shuffled_y
 
         ## Train Classifier 0
         X = X_train
@@ -48,7 +63,11 @@ class MlcClassifierChains:
 
         self.label_dim = y_train.shape[1]
 
-        for i in tqdm.trange(1, self.label_dim):
+        _init = False
+
+        iterator = tqdm.trange(1, self.label_dim)
+        # iterator = range(1, self.label_dim)
+        for i in iterator:
             ## Train Classifier i
             y = y_train[:, i]
 
@@ -56,12 +75,17 @@ class MlcClassifierChains:
             clf = self.classifier_type(**self.args)
             clf.fit(X, y)
 
+            if not _init:
+                self.lossHistory = np.zeros(len(clf.lossHistory))
+                _init = True
+            self.lossHistory = self.lossHistory + np.asarray(clf.lossHistory) / 1000
+
             # Save the trained instance
             self.trained.append(clf)
 
             # Add label i to features
             X = concatenate_csr_matrices_by_columns(X, y)
-            # if i == 40: exit(1)
+        return self
 
     @profile
     def predict(self, X_test):
@@ -90,7 +114,9 @@ class MlcClassifierChains:
         # Concatenate result to X
         X = sp.hstack([X, sp.csr_matrix(y)], format="csr")
 
-        for i in tqdm.trange(1, self.label_dim):
+        # iterator = tqdm.trange(1, self.label_dim)
+        iterator = range(1, self.label_dim)
+        for i in iterator:
             ## Predict Label i
 
             # Retrieve trained classifier for label i
@@ -105,3 +131,9 @@ class MlcClassifierChains:
             X = sp.hstack([X, sp.csr_matrix(y)], format="csr")
 
         return result
+
+    def score(self, X, y, sample_weight=None):
+        return MlcScore.score_accuracy(ypredicted=self.predict(X), yreal=y)
+
+    def get_params(self, deep=True):
+        return super(MlcClassifierChains, self).get_params(deep)

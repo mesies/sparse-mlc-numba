@@ -10,3 +10,8 @@ library_test.bbl
 *.blg
 report.out
 /benchmarks.py.lprof
+*.ipynb
+*.lprof
+*.mat
+/.spyproject/
+/.ipynb_checkpoints/
