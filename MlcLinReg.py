@@ -17,7 +17,7 @@ class MlcLinReg:
     def __init__(self,
                  learning_rate=0.0001,
                  iterations=1000,
-                 sparse=False,
+                 sparse=True,
                  verbose=False,
                  grad_check=False,
                  batch_size=20,

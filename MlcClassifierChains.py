@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as sp
 import logging
 from helpers import concatenate_csr_matrices_by_columns
+from MlcLinReg import MlcLinReg
 import tqdm
 import MlcScore
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -12,13 +13,28 @@ from abc import ABCMeta, abstractmethod
 profile = lambda f: f
 
 
-class MlcClassifierChains(BaseEstimator):
+class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
     def __init__(self,
-                 classifier,
-                 **args):
-        self.args = args
+                 learning_rate=0.0499,
+                 iterations=1000,
+                 sparse=True,
+                 verbose=False,
+                 grad_check=False,
+                 batch_size=300,
+                 alpha=0.5,
+                 velocity=1):
+
+        self.learning_rate = learning_rate
+        self.iterations = iterations
+        self.sparse = sparse
+        self.verbose = verbose
+        self.grad_check = grad_check
+        self.batch_size = batch_size
+        self.alpha = alpha
+        self.velocity = velocity
+
         self.trained = []
-        self.classifier_type = classifier
+        self.classifier_type = MlcLinReg
         self.label_dim = -1
         self.lossHistory = []
         logging.basicConfig(level=logging.WARNING)
@@ -52,7 +68,10 @@ class MlcClassifierChains(BaseEstimator):
         y = y_train[:, 0]
 
         # Create an instance of chosen classifier with chosen arguments
-        clf = self.classifier_type(**self.args)
+        clf = self.classifier_type(
+            learning_rate=self.learning_rate,
+            batch_size=self.batch_size,
+            iterations=self.iterations)
         clf.fit(X, y)
 
         # Save the trained instance
@@ -65,14 +84,16 @@ class MlcClassifierChains(BaseEstimator):
 
         _init = False
 
-        iterator = tqdm.trange(1, self.label_dim)
-        # iterator = range(1, self.label_dim)
+        # iterator = tqdm.trange(1, self.label_dim)
+        iterator = range(1, self.label_dim)
         for i in iterator:
             ## Train Classifier i
             y = y_train[:, i]
 
             # Create and fit an instance of chosen classifier with chosen arguments and trains it
-            clf = self.classifier_type(**self.args)
+            clf = self.classifier_type(learning_rate=self.learning_rate,
+                                       batch_size=self.batch_size,
+                                       iterations=self.iterations)
             clf.fit(X, y)
 
             if not _init:
