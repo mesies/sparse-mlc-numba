@@ -162,6 +162,27 @@ class MyTestCase(unittest.TestCase):
         abs_max = mlc.fit(X_train, y_train[:, 0])
         self.assertLessEqual(abs_max, 1e-4)
 
+    def test_batch_iter(self):
+        import MlcLinReg
+        import scipy.sparse as sp
+        from helpers import batch_iter
+        A = sp.csr_matrix(np.array(
+            [
+                [1., 2., 3.],
+                [0., -1., 1.],
+                [3., 4., 5.],
+                [1., 2., 3.],
+                [0., -1., 1.],
+                [3., 4., 5.],
+                [1., 2., 3.],
+                [0., -1., 1.],
+                [3., 4., 5.]
+            ]
+        )
+        )
+        B = list(batch_iter(A, A, 2))
+
+        self.assertEqual(len(B), 5)
 
 if __name__ == '__main__':
     unittest.main()

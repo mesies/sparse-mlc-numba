@@ -11,6 +11,7 @@ import tqdm
 from mathutil import gradient, log_likelihood, gradient_sp, log_likelihood_sp
 import matplotlib.pyplot as plt
 from sklearn.model_selection import learning_curve, ShuffleSplit
+import MlcLinReg
 
 # Comment when debugging with line_profiler
 profile = lambda f: f
@@ -236,6 +237,42 @@ def report(results, n_top=3):
                 results['std_test_score'][candidate]))
             print("Parameters: {0}".format(results['params'][candidate]))
             print("")
+
+
+def generate_load_cache(filename, X_train, y_train, batch_size):
+    """
+    Split X_train, y_train, in batches and save them
+    :param X_train:
+    :param y_train:
+    :return:
+    """
+    try:
+        cache = np.load(filename + "_batches.npz")['a']
+    except IOError:
+        # shuffle X_train, y_train
+        data_size = y_train.shape[0]
+
+        shuffle_indices = np.random.permutation(np.arange(data_size))
+        shuffled_y = y_train[shuffle_indices]
+        shuffled_tx = X_train[shuffle_indices]
+
+        X_train = shuffled_tx
+        y_train = shuffled_y
+        # generate batches -> insert to list
+        cache = list(MlcLinReg.MlcLinReg.batch_iter(MlcLinReg.MlcLinReg(), y_train, X_train, batch_size))
+        # save list as filename
+        np.savez(filename + "_batches.npz", a=cache)
+    return cache
+
+
+def batch_iter(y, X, batch_size, shuffle=False):
+    for i in np.arange(0, X.shape[0], int(batch_size)):
+        limit = (i + batch_size)
+        if limit > X.shape[0]: limit = X.shape[0]
+        if scipy.sparse.issparse(X):
+            yield (X[i:limit, :], y[i:limit, :])
+        else:
+            yield (X[i:limit, :], y[i:limit, :])
 
 
 def size(x, str1=' '):

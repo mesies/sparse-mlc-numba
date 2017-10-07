@@ -9,6 +9,10 @@ from scipy.sparse import csr_matrix, coo_matrix, csc_matrix
 profile = lambda f: f
 
 
+def ult_grad(X, W, y):
+    dotp = sigmoid(X.dot(W))
+    sdotp = dotp.T
+
 @profile
 def gradient_sp(X, W, y):
     """
@@ -21,8 +25,9 @@ def gradient_sp(X, W, y):
 
     # sigm(XW) - y
     dotp = sigmoid(X.dot(W))
-
     sdotp = dotp.T
+
+    #############################################Doable
     if y.nnz != 0:
         # Originally it is required to compute
         #             s = -1 ^ (1 - y_n)
@@ -31,21 +36,18 @@ def gradient_sp(X, W, y):
         # Because y[ind] = 1, if ind = y.nonzero()
         resultrow, resultcol = nonzero(y)
         sdotp[resultrow] -= 1
-
-    # (sigm(XW) - y) * X,T
-    # X.multiply(sdotp[:, np.newaxis]) is sparse so a significant speedup was achieved by exploiting this fact when
-    # computing its sum below
-    in_sum = (X.multiply(sdotp[:, np.newaxis]))
-    result = in_sum.sum(axis=0).A1
+    ##############################################
 
     # # (sigm(XW) - y) * X,T
-    # in_sum = X.multiply(sdotp[:, np.newaxis]).A
-    #
-    # # result = np.sum(in_sum, axis=0 )
-    # result = np.zeros(X.shape[1], dtype=float)
-    # sum_rows(in_sum, result, in_sum.shape[0], in_sum.shape[1])
+    in_sum = X.multiply(sdotp[:, np.newaxis]).A
+    # Request nnz, use for mult
+
+    ############################################Doable
+    result = np.zeros(X.shape[1], dtype=float)
+    sum_rows(in_sum, result, in_sum.shape[0], in_sum.shape[1])
     # result = np.sum(in_sum, axis=0) # - 0.01 * np.linalg.norm(W)
     return result
+    ###########################################
 
 
 # Optimised
@@ -94,8 +96,7 @@ def nonzero(x):
 
 
 @numba.jit('void(int32[:],int32[:], float64[:], int32[:], int32[:], int32, int32)',
-           nopython=True,
-           nogil=True)
+           nopython=True)
 def nonzero_numb(result_row, result_col, data, indices, indptr, columns, iscsr):
     """
     See nonzero
@@ -129,8 +130,7 @@ def nonzero_numb(result_row, result_col, data, indices, indptr, columns, iscsr):
 
 @numba.jit('void(float64[:,:], float64[:], int64, int64)',
            nopython=True,
-           cache=True,
-           nogil=True)
+           cache=True)
 def sum_rows(x, result, dim0, dim1):
     """
     Numba function which returns sum of eaxh row e.g. [1 2 3] -> 6 [1 1],[2 2],[3 3] -> [2], [4], [6]
@@ -147,8 +147,7 @@ def sum_rows(x, result, dim0, dim1):
 
 @numba.jit('float64(float64, float64[:], int64)',
            nopython=True,
-           cache=True
-           )
+           cache=True)
 def summ(result, x, sh):
     """
     An optimised summation using Numba's JIT compiler
@@ -165,8 +164,7 @@ def summ(result, x, sh):
 
 @numba.jit('void(float64[:], float64[:,:], float64[:,:], int64, int64)',
            nopython=True,
-           cache=True,
-           nogil=True)
+           cache=True)
 def multt(row_matrix, matrix, result, dim0, dim1):
     """
     Optimised matrix element-wise multiplication when one matrix
@@ -265,6 +263,9 @@ def sigmoid(x):
     Sigmoid function.
     """
 
+    # if scipy.sparse.issparse(x):
+    #     return csr_matrix(sigmoid(x.data), x.indices, x.indprt)
+    # else:
     # result = 1. / (1. + np.exp(-x))
     result = 0.5 * (np.tanh(0.5 * x) + 1)
     # result = scipy.special.expit(x)

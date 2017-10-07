@@ -22,7 +22,8 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
                  grad_check=False,
                  batch_size=300,
                  alpha=0.5,
-                 velocity=1):
+                 velocity=1,
+                 cache=None):
 
         self.learning_rate = learning_rate
         self.iterations = iterations
@@ -32,6 +33,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         self.batch_size = batch_size
         self.alpha = alpha
         self.velocity = velocity
+        self.cache = cache
 
         self.trained = []
         self.classifier_type = MlcLinReg
@@ -53,15 +55,16 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         logging.info("       Commencing Classifier Chain training")
         logging.info("***************************************************")
 
-        ##Shuffle Data
-        data_size = y_train.shape[0]
+        if self.cache is None:
+            ##Shuffle Data
+            data_size = y_train.shape[0]
 
-        shuffle_indices = np.random.permutation(np.arange(data_size))
-        shuffled_y = y_train[shuffle_indices]
-        shuffled_tx = X_train[shuffle_indices]
+            shuffle_indices = np.random.permutation(np.arange(data_size))
+            shuffled_y = y_train[shuffle_indices]
+            shuffled_tx = X_train[shuffle_indices]
 
-        X_train = shuffled_tx
-        y_train = shuffled_y
+            X_train = shuffled_tx
+            y_train = shuffled_y
 
         ## Train Classifier 0
         X = X_train
@@ -71,7 +74,8 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         clf = self.classifier_type(
             learning_rate=self.learning_rate,
             batch_size=self.batch_size,
-            iterations=self.iterations)
+            iterations=self.iterations,
+            cache=self.cache)
         clf.fit(X, y)
 
         # Save the trained instance
@@ -84,8 +88,8 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
 
         _init = False
 
-        # iterator = tqdm.trange(1, self.label_dim)
-        iterator = range(1, self.label_dim)
+        iterator = tqdm.trange(1, self.label_dim)
+        # iterator = range(1, self.label_dim)
         for i in iterator:
             ## Train Classifier i
             y = y_train[:, i]
@@ -106,6 +110,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
 
             # Add label i to features
             X = concatenate_csr_matrices_by_columns(X, y)
+            if i == 30: exit(0)
         return self
 
     @profile

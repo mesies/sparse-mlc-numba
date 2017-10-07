@@ -2,6 +2,7 @@ import logging
 import numpy as np
 import helpers
 import mathutil
+import scipy.sparse as sp
 
 # Comment when debugging with line profiler
 profile = lambda f: f
@@ -22,7 +23,8 @@ class MlcLinReg:
                  grad_check=False,
                  batch_size=20,
                  alpha=0.5,
-                 velocity=1):
+                 velocity=1,
+                 cache=None):
 
         self.batch_size = batch_size
         self.verbose = verbose
@@ -34,11 +36,13 @@ class MlcLinReg:
         self.lossHistory = []
         self.alpha = alpha
         self.velocity = velocity
+        self.cache = cache
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
         else:
             logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.DEBUG)
 
+    @profile
     def fit(self, X, y):
         """
         Fits the classifier using X and y as training examples
@@ -48,7 +52,7 @@ class MlcLinReg:
         """
 
         logging.info("Started Fitting Dataa")
-        self.w = np.random.uniform(size=(X.shape[1],))
+        self.w = (np.random.uniform(size=(X.shape[1],)))
 
         if self.grad_check:
             logging.info("Commencing Gradient Check")
@@ -76,11 +80,16 @@ class MlcLinReg:
         epoch_loss = []
         # learning rate e, momentum parameter a,
 
+        # if self.cache is None:
+        #     gen = self.batch_iter(y, X, batch_size)
+        # else:
+        #     gen = self.cache
+
         for epoch in range(0, epochs):
             old_loss = np.inf
 
             grads = []
-            for (sampleX, sampley) in self.batch_iter(X, y, batch_size):
+            for (sampleX, sampley) in self.batch_iter(y, X, batch_size):
 
                 loss = mathutil.log_likelihood_sp(X=sampleX, y=sampley, W=self.w)
                 gradient = mathutil.gradient_sp(sampleX, self.w, sampley)
@@ -105,20 +114,7 @@ class MlcLinReg:
 
     @profile
     def batch_iter(self, y, tx, batch_size, num_batches=1, shuffle=False):
-        data_size = y.shape[0]
-
-        if shuffle:
-            shuffle_indices = np.random.permutation(np.arange(data_size))
-            shuffled_y = y[shuffle_indices]
-            shuffled_tx = tx[shuffle_indices]
-        else:
-            shuffled_y = y
-            shuffled_tx = tx
-        for batch_num in range(num_batches):
-            start_index = batch_num * batch_size
-            end_index = min((batch_num + 1) * batch_size, data_size)
-            if start_index != end_index:
-                yield shuffled_y[start_index:end_index, :], shuffled_tx[start_index:end_index, :]
+        return helpers.batch_iter(y, tx, batch_size)
 
     def predict(self, X):
         logging.info("Predicting Labels")
