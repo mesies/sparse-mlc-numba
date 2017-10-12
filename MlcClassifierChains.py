@@ -110,7 +110,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
 
             # Add label i to features
             X = concatenate_csr_matrices_by_columns(X, y)
-            if i == 30: exit(0)
+            # if i == 30: exit(0)
         return self
 
     @profile

@@ -85,12 +85,16 @@ class MlcLinReg:
         # else:
         #     gen = self.cache
 
+        batches = list(self.batch_iter(y, X, batch_size))
+
         for epoch in range(0, epochs):
             old_loss = np.inf
 
             grads = []
-            for (sampleX, sampley) in self.batch_iter(y, X, batch_size):
+            shuffle_indices = np.random.permutation(np.arange(len(batches)))
 
+            for batch_ind in shuffle_indices:
+                (sampleX, sampley) = batches[batch_ind]
                 loss = mathutil.log_likelihood_sp(X=sampleX, y=sampley, W=self.w)
                 gradient = mathutil.gradient_sp(sampleX, self.w, sampley)
 

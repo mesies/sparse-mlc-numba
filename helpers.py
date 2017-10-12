@@ -341,6 +341,12 @@ def concatenate_csr_matrices_by_columns(matrix1, matrix2):
     :return:
     """
     csr = isinstance(matrix1, scipy.sparse.csr_matrix)
+    if isinstance(matrix2, np.ndarray):
+        if csr:
+            matrix2 = sp.csr_matrix(matrix2)
+        else:
+            matrix2 = sp.csc_matrix(matrix2)
+
     if csr:
         matrix1 = matrix1.T.asformat('csr')
         matrix2 = matrix2.T.asformat('csr')

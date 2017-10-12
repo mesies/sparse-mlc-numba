@@ -184,5 +184,26 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(len(B), 5)
 
+    def test_sparse_mult(self):
+
+        A = sp.csr_matrix(np.array([
+            [1., 2., 3.],
+            [0., -1., 1.],
+            [3., 4., 5.]]))
+        B = (np.array([
+            [1., 2., 3.]
+        ]))
+        b4 = A.multiply(B[:, np.newaxis])
+
+        from mathutil import mult_row_sparse, mult_row
+        after = mult_row_sparse(A, B)
+
+        after2 = mult_row(A, B)
+
+        t = np.max(np.abs(b4 - after))
+        t += np.max(np.abs(b4 - after2))
+
+        self.assertEqual(t, 0)
+
 if __name__ == '__main__':
     unittest.main()

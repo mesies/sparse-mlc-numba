@@ -50,10 +50,9 @@ ti = tic()
 X_train, y_train, X_test, y_test = load_delicious()
 
 learning_rate = 0.026
-iterations = 321
+iterations = 200
 
-batch_size = 4575
-batch_size = 100
+batch_size = 512
 
 mlc = MlcClassifierChains(learning_rate=learning_rate,
                           iterations=iterations,
@@ -68,6 +67,11 @@ mlc = MlcClassifierChains(learning_rate=learning_rate,
 mlc.fit(X_train, y_train)
 y_pred = mlc.predict(X_test)
 
+from MlcScore import score_accuracy
+
+print(score_accuracy(y_pred, y_test))
+
+exit(1)
 savemat('y_test.mat', {'y_test': y_test})
 savemat('y_pred.mat', {'y_pred': y_pred})
 
