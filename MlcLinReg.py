@@ -1,8 +1,11 @@
 import logging
+
 import numpy as np
+
 import helpers
-import mathutil
-import scipy.sparse as sp
+import sparse_math_lib.gradient
+import sparse_math_lib.logloss
+from sparse_math_lib import mathutil
 
 # Comment when debugging with line profiler
 profile = lambda f: f
@@ -95,8 +98,8 @@ class MlcLinReg:
 
             for batch_ind in shuffle_indices:
                 (sampleX, sampley) = batches[batch_ind]
-                loss = mathutil.log_likelihood_sp(X=sampleX, y=sampley, W=self.w)
-                gradient = mathutil.gradient_sp(sampleX, self.w, sampley)
+                loss = sparse_math_lib.logloss.log_likelihood_sp(X=sampleX, y=sampley, W=self.w)
+                gradient = sparse_math_lib.gradient.gradient_sp(sampleX, self.w, sampley)
 
                 epoch_loss.append(loss)
                 grads.append(gradient)
@@ -140,14 +143,14 @@ class MlcLinReg:
             y = y[indexes]
             for (sampleX, sampley) in self.batch_iter(X, y, batch_size):
 
-                loss = mathutil.log_likelihood(X=sampleX, y=sampley.T, W=self.w)
+                loss = sparse_math_lib.logloss.log_likelihood(X=sampleX, y=sampley.T, W=self.w)
 
                 epoch_loss.append(loss)
                 if np.abs(loss - old_loss) < tolerance:
                     break
                 old_loss = loss
 
-                gradient = mathutil.gradient(sampleX, self.w, sampley)
+                gradient = sparse_math_lib.gradient.gradient(sampleX, self.w, sampley)
 
                 self.w = self.w - self.l * gradient
             self.lossHistory.append(np.average(epoch_loss))

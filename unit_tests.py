@@ -3,8 +3,9 @@ import unittest
 import numpy as np
 import scipy.sparse as sp
 
-import mathutil
-from mathutil import nonzero as nzt
+import sparse_math_lib.sp_operations
+from sparse_math_lib import mathutil
+from sparse_math_lib.sp_operations import nonzero as nzt, mult_row
 
 
 class MyTestCase(unittest.TestCase):
@@ -22,7 +23,7 @@ class MyTestCase(unittest.TestCase):
             [3., 4., 5.]])
         result = np.zeros(shape=3)
 
-        mathutil.sum_rows(A, result, A.shape[0], A.shape[1])
+        sparse_math_lib.sp_operations.sum_rows_of_matrix_numba(A, result, A.shape[0], A.shape[1])
         t = np.max(np.abs(result - np.sum(A, axis=0)))
 
         self.assertEqual(t, 0)
@@ -155,7 +156,6 @@ class MyTestCase(unittest.TestCase):
         y_train = y[train_ind[:, 0]]
         y_test = y[test_ind[:, 0]]
 
-        from MlcClassifierChains import MlcClassifierChains
         from MlcLinReg import MlcLinReg
         mlc = MlcLinReg(grad_check=True)
 
@@ -163,7 +163,6 @@ class MyTestCase(unittest.TestCase):
         self.assertLessEqual(abs_max, 1e-4)
 
     def test_batch_iter(self):
-        import MlcLinReg
         import scipy.sparse as sp
         from helpers import batch_iter
         A = sp.csr_matrix(np.array(
@@ -195,13 +194,13 @@ class MyTestCase(unittest.TestCase):
         ]))
         b4 = A.multiply(B[:, np.newaxis])
 
-        from mathutil import mult_row_sparse, mult_row
-        after = mult_row_sparse(A, B)
+        # from sparse_math_lib.sp_operations import mult_row_sparse_cython
+        # after = mult_row_sparse_cython(A, B)
 
         after2 = mult_row(A, B)
+        # t = np.max(np.abs(b4 - after))
 
-        t = np.max(np.abs(b4 - after))
-        t += np.max(np.abs(b4 - after2))
+        t = np.max(np.abs(b4 - after2))
 
         self.assertEqual(t, 0)
 

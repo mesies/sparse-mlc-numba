@@ -1,17 +1,18 @@
 # import autograd
 # import autograd.numpy as np
-import time
 import logging
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.sparse as sp
 from sklearn.datasets import load_svmlight_file
-import tqdm
-from mathutil import gradient, log_likelihood, gradient_sp, log_likelihood_sp
-import matplotlib.pyplot as plt
-from sklearn.model_selection import learning_curve, ShuffleSplit
+from sklearn.model_selection import learning_curve
+
 import MlcLinReg
+from sparse_math_lib.logloss import log_likelihood_sp, log_likelihood
+from sparse_math_lib.gradient import gradient_sp, gradient
 
 # Comment when debugging with line_profiler
 profile = lambda f: f

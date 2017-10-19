@@ -94,7 +94,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
             ## Train Classifier i
             y = y_train[:, i]
 
-            # Create and fit an instance of chosen classifier with chosen arguments and trains it
+            # Create and fit an instance of chosen classifier with chosen arguments and train it
             clf = self.classifier_type(learning_rate=self.learning_rate,
                                        batch_size=self.batch_size,
                                        iterations=self.iterations)
@@ -110,7 +110,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
 
             # Add label i to features
             X = concatenate_csr_matrices_by_columns(X, y)
-            # if i == 30: exit(0)
+            if i == 10: exit(0)
         return self
 
     @profile
