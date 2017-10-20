@@ -1,20 +1,13 @@
 import numba
 import numpy as np
 from scipy.sparse import csr_matrix, csc_matrix
-import pyximport;
-
-pyximport.install(setup_args={'include_dirs': np.get_include()})
-from sparse_math_lib.cython_math import mult_cython
 
 
-def mult_faster_access(A, B):
-    result = np.zeros((A.shape))
-    start = 0
-    for i, end in enumerate(A.indptr[1:]):
-        for j, val in zip(A.indices[start:end], A.data[start:end]):
-            result[i, j] = val * B[j]
-        start = end
-    return result
+# import pyximport;
+
+# pyximport.install(setup_args={'include_dirs': np.get_include()})
+# from sparse_math_lib.cython_math import mult_cython
+
 
 
 def mult_row_sparse_cython(A, B):
@@ -158,8 +151,8 @@ def mult_col_matrix_numba(col_matrix, matrix, result, dim0, dim1):
 
 @numba.jit('void(float64[:], float64[:,:], float64[:,:], int64, int64)',
            nopython=True,
-           cache=True,
-           nogil=True)
+           nogil=True
+           )
 def mult_row_matrix_numba(row_matrix, matrix, result, dim0, dim1):
     """
     Optimised matrix element-wise multiplication when one matrix

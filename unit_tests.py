@@ -5,8 +5,9 @@ import scipy.sparse as sp
 
 import sparse_math_lib.sp_operations
 from sparse_math_lib import mathutil
-from sparse_math_lib.sp_operations import nonzero as nzt, mult_row
+from sparse_math_lib.sp_operations import nonzero as nzt, mult_row, mult_row_sparse_cython
 
+import joblib
 
 class MyTestCase(unittest.TestCase):
     """
@@ -195,7 +196,8 @@ class MyTestCase(unittest.TestCase):
         b4 = A.multiply(B[:, np.newaxis])
 
         # from sparse_math_lib.sp_operations import mult_row_sparse_cython
-        # after = mult_row_sparse_cython(A, B)
+
+        after = mult_row_sparse_cython(A, B.reshape(3))
 
         after2 = mult_row(A, B)
         # t = np.max(np.abs(b4 - after))
@@ -203,6 +205,11 @@ class MyTestCase(unittest.TestCase):
         t = np.max(np.abs(b4 - after2))
 
         self.assertEqual(t, 0)
+
+    def test_job(self):
+        from joblib import Parallel, delayed
+        from math import sqrt
+        Parallel(n_jobs=2)(delayed(sqrt)(i ** 2) for i in range(10))
 
 if __name__ == '__main__':
     unittest.main()

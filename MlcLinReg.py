@@ -98,6 +98,7 @@ class MlcLinReg:
 
             for batch_ind in shuffle_indices:
                 (sampleX, sampley) = batches[batch_ind]
+
                 loss = sparse_math_lib.logloss.log_likelihood_sp(X=sampleX, y=sampley, W=self.w)
                 gradient = sparse_math_lib.gradient.gradient_sp(sampleX, self.w, sampley)
 
@@ -110,6 +111,7 @@ class MlcLinReg:
 
                 self.velocity = (self.alpha * self.velocity) - (self.l * gradient)
                 self.w = self.w + self.velocity
+
             self.lossHistory.append(np.average(epoch_loss))
             logging.info("Ending epoch %i, average loss -> %f Epoch gradient AVG -> %f", epoch, np.average(epoch_loss),
                          np.average(grads))
@@ -129,6 +131,7 @@ class MlcLinReg:
         y = np.around(y)
         return y
 
+    # dont use
     def stochastic_gradient_descent(self, X, y, tolerance, epochs=2000, batch_size=10):
 
         logging.info("Commencing SGD")
