@@ -18,11 +18,11 @@ np.float64(X)
 np.float64(y)
 
 
-mlc = MlcLinReg(learning_rate=0.001, iterations=2000, batch_size=200, verbose=True)
+mlc = MlcLinReg(learning_rate=0.001, iterations=2000, batch_size=200, verbose=True, sparse=False)
 W = mlc.fit(X, y)
 preds = mlc.predict(X)
 
 print("Score " + str(accuracy_score(y_true=y, y_pred=preds)))
 
-helpers.plot_linreg_results(X, W, y, preds, mlc.lossHistory)
+helpers.plot_linreg_results(X=X, W=W.w, y=y, preds=preds, lossHistory=mlc.lossHistory)
 

@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.sparse as sp
 import logging
-from helpers import concatenate_csr_matrices_by_columns
+from helpers import concatenate_csr_matrices_by_columns, shuffle_dataset
 from MlcLinReg import MlcLinReg
 import tqdm
 import MlcScore
@@ -57,14 +57,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
 
         if self.cache is None:
             ##Shuffle Data
-            data_size = y_train.shape[0]
-
-            shuffle_indices = np.random.permutation(np.arange(data_size))
-            shuffled_y = y_train[shuffle_indices]
-            shuffled_tx = X_train[shuffle_indices]
-
-            X_train = shuffled_tx
-            y_train = shuffled_y
+            shuffle_dataset(X_train, y_train)
 
         ## Train Classifier 0
         X = X_train
@@ -110,7 +103,6 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
 
             # Add label i to features
             X = concatenate_csr_matrices_by_columns(X, y)
-            if i == 100: exit(0)
         return self
 
     @profile

@@ -265,6 +265,23 @@ def generate_load_cache(filename, X_train, y_train, batch_size):
         np.savez(filename + "_batches.npz", a=cache)
     return cache
 
+def shuffle_dataset(X, y, copy=True):
+    data_size = y.shape[0]
+
+    shuffle_indices = np.random.permutation(np.arange(data_size))
+    shuffled_y = y[shuffle_indices]
+    shuffled_tx = X[shuffle_indices]
+
+    if copy:
+        X_train = shuffled_tx.copy()
+        y_train = shuffled_y.copy()
+    else:
+        X_train = shuffled_tx
+        y_train = shuffled_y
+
+    return X_train, y_train
+
+
 
 def batch_iter(y, X, batch_size, shuffle=False):
     for i in np.arange(0, X.shape[0], int(batch_size)):
@@ -275,6 +292,18 @@ def batch_iter(y, X, batch_size, shuffle=False):
         else:
             yield (X[i:limit, :], y[i:limit, :])
 
+
+def batch_iter_linreg_test(y, X, batch_size, shuffle=False):
+    """
+    Created for testing the linear regression classifier
+    """
+    for i in np.arange(0, X.shape[0], int(batch_size)):
+        limit = (i + batch_size)
+        if limit > X.shape[0]: limit = X.shape[0]
+        if scipy.sparse.issparse(X):
+            yield (X[i:limit, :], y[i:limit])
+        else:
+            yield (X[i:limit, :], y[i:limit])
 
 def size(x, str1=' '):
     """

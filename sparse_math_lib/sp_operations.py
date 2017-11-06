@@ -41,6 +41,7 @@ def nonzero(x):
     :param x: The sparse matrix in question only csr and csc matrices are supported
     :return: row indices and column indices
     """
+
     indrow = np.zeros((x.data.shape[0]), dtype=int)
     indcol = np.zeros((x.data.shape[0]), dtype=int)
     if isinstance(x, csr_matrix):
@@ -53,9 +54,10 @@ def nonzero(x):
     return indrow, indcol
 
 
-@numba.jit('void(int32[:],int32[:], float64[:], int32[:], int32[:], int32, int32)',
+@numba.jit('void(int64[:], int64[:], float64[:], int32[:], int32[:], int64, int64)',
            nopython=True,
-           nogil=True)
+           nogil=True,
+           cache=True)
 def nonzero_numba(result_row, result_col, data, indices, indptr, columns, iscsr):
     """
     See nonzero

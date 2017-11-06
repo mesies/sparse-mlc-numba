@@ -127,9 +127,9 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(t, 0)
 
     def test_gradient(self):
-        DATASET_FILENAME = "data\delicious_data.txt"
-        DATASET_TRAIN_SET_FILENAME = "data\delicious_trSplit.txt"
-        DATASET_TEST_SET_FILENAME = "data\delicious_tstSplit.txt"
+        DATASET_FILENAME = "delicious_data.txt"
+        DATASET_TRAIN_SET_FILENAME = "delicious_trSplit.txt"
+        DATASET_TEST_SET_FILENAME = "delicious_tstSplit.txt"
 
         from helpers import load_mlc_dataset
         X, y, header_info = load_mlc_dataset(DATASET_FILENAME,
@@ -197,7 +197,7 @@ class MyTestCase(unittest.TestCase):
 
         # from sparse_math_lib.sp_operations import mult_row_sparse_cython
 
-        after = mult_row_sparse_cython(A, B.reshape(3))
+        #after = mult_row_sparse_cython(A, B.reshape(3))
 
         after2 = mult_row(A, B)
         # t = np.max(np.abs(b4 - after))
