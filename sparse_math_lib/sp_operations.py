@@ -119,7 +119,7 @@ def sum_of_vector_numba(result, x, sh):
 
 
 def mult_row(A, B):
-    if A.shape[0] != B.shape[0]:
+    if A.shape[0] != B.shape[1]:
         raise RuntimeError("Matrices haven't compatible size.")
     result = np.zeros(A.shape)
     mult_row_matrix_numba(B.ravel(), A.toarray(), result, A.shape[0], A.shape[1])
