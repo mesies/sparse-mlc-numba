@@ -1,11 +1,9 @@
 import numpy as np
+
 from sparse_math_lib.mathutil import sigmoid
-from sparse_math_lib.sp_operations import nonzero, sum_rows_of_matrix_numba, mult_row
-import numexpr as nex
-import scipy.sparse as sp
+from sparse_math_lib.sp_operations import nonzero
 
 profile = lambda f: f
-import helpers
 
 
 @profile
@@ -21,7 +19,7 @@ def gradient_sp(X, W, y):
     dotp = sigmoid(X.dot(W))
     sdotp = dotp.T
 
-    #############################################Doable
+    # ############################################Doable
     if y.nnz != 0:
         # Originally it is required to compute
         #             s = -1 ^ (1 - y_n)
@@ -30,7 +28,7 @@ def gradient_sp(X, W, y):
         # Because y[ind] = 1, if ind = y.nonzero()
         resultrow, resultcol = nonzero(y)
         sdotp[resultrow] -= 1
-    ##############################################
+    # #############################################
 
     # # (sigm(XW) - y) * X,T
     # G = X.tocsc()

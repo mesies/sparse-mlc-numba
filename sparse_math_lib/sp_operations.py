@@ -4,17 +4,8 @@ from scipy.sparse import csr_matrix, csc_matrix
 
 
 # import pyximport;
-
 # pyximport.install(setup_args={'include_dirs': np.get_include()})
 # from sparse_math_lib.cython_math import mult_cython
-
-
-
-def mult_row_sparse_cython(A, B):
-    resultrow, resultcol = nonzero(A)
-    result = A.toarray()
-    mult_cython(result, B, resultcol, resultrow, resultrow.shape[0])
-    return result
 
 
 @numba.jit('void(float64[:,:], float64[:], int32[:], int32[:], int64)',
@@ -45,25 +36,25 @@ def nonzero(x):
     indrow = np.zeros((x.data.shape[0]), dtype=int)
     indcol = np.zeros((x.data.shape[0]), dtype=int)
     if isinstance(x, csr_matrix):
-        nonzero_numba(indrow, indcol, x.data, x.indices, x.indptr, x.shape[0], 1)
+        nonzero_numba(indrow, indcol, x.indices, x.indptr, x.shape[0], 1)
     elif isinstance(x, csc_matrix):
-        nonzero_numba(indrow, indcol, x.data, x.indices, x.indptr, x.shape[1], 0)
+        nonzero_numba(indrow, indcol, x.indices, x.indptr, x.shape[1], 0)
     else:
         raise NotImplementedError(
             "nonzero is implemented only for csr and csc matrices use scipy.sparse.(any sparse format).nonzero()")
     return indrow, indcol
 
 
-@numba.jit('void(int64[:], int64[:], float64[:], int32[:], int32[:], int64, int64)',
+@numba.jit(['void(int64[:], int64[:], int32[:], int32[:], int64, int64)',
+            'void(int32[:], int32[:], int32[:], int32[:], int64, int64)'],
            nopython=True,
            nogil=True,
            cache=True)
-def nonzero_numba(result_row, result_col, data, indices, indptr, columns, iscsr):
+def nonzero_numba(result_row, result_col, indices, indptr, columns, iscsr):
     """
     See nonzero
     :param result_row:
     :param result_col:
-    :param data:
     :param indices:
     :param indptr:
     :param columns:
@@ -107,6 +98,7 @@ def sum_rows_of_matrix_numba(x, result, dim0, dim1):
             result[j] += x[i, j]
 
 
+# noinspection PyUnusedLocal
 @numba.jit('float64(float64, float64[:], int64)',
            nopython=True,
            cache=True,
@@ -127,6 +119,8 @@ def sum_of_vector_numba(result, x, sh):
 
 
 def mult_row(A, B):
+    if A.shape[0] != B.shape[0]:
+        raise RuntimeError("Matrices haven't compatible size.")
     result = np.zeros(A.shape)
     mult_row_matrix_numba(B.ravel(), A.toarray(), result, A.shape[0], A.shape[1])
     return result

@@ -1,13 +1,14 @@
-import numpy as np
-import scipy.sparse as sp
 import logging
-from helpers import concatenate_csr_matrices_by_columns, shuffle_dataset
-from MlcLinReg import MlcLinReg
+from abc import ABCMeta
+
+import numpy as np
 import tqdm
-import MlcScore
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.externals import six
-from abc import ABCMeta, abstractmethod
+
+import MlcScore
+from MlcLinReg import MlcLinReg
+from helpers import concatenate_csr_matrices_by_columns, shuffle_dataset
 
 # Comment when debugging with line profiler
 profile = lambda f: f
@@ -56,10 +57,10 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         logging.info("***************************************************")
 
         if self.cache is None:
-            ##Shuffle Data
+            # Shuffle Data
             shuffle_dataset(X_train, y_train)
 
-        ## Train Classifier 0
+        # Train Classifier 0
         X = X_train
         y = y_train[:, 0]
 
@@ -84,7 +85,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         iterator = tqdm.trange(1, self.label_dim)
         # iterator = range(1, self.label_dim)
         for i in iterator:
-            ## Train Classifier i
+            # Train Classifier i
             y = y_train[:, i]
 
             # Create and fit an instance of chosen classifier with chosen arguments and train it
@@ -116,7 +117,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         logging.info("       Commencing Classifier Chain predicting")
         logging.info("***************************************************")
 
-        ## Predict Label 0
+        # Predict Label 0
         i = 0
         X = X_test
 
@@ -130,12 +131,12 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         y = y.reshape((y.shape[0], 1))
 
         # Concatenate result to X
-        X = sp.hstack([X, sp.csr_matrix(y)], format="csr")
+        # X = sp.hstack([X, sp.csr_matrix(y)], format="csr")
 
         # iterator = tqdm.trange(1, self.label_dim)
         iterator = range(1, self.label_dim)
         for i in iterator:
-            ## Predict Label i
+            # Predict Label i
 
             # Retrieve trained classifier for label i
             clf = self.trained[i]
@@ -146,12 +147,12 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
             y = y.reshape((y.shape[0], 1))
 
             # Concatenate result to X
-            X = sp.hstack([X, sp.csr_matrix(y)], format="csr")
+            # X = sp.hstack([X, sp.csr_matrix(y)], format="csr")
 
         return result
 
     def score(self, X, y, sample_weight=None):
-        return MlcScore.score_accuracy(ypredicted=self.predict(X), yreal=y)
+        return MlcScore.score_accuracy(y_predicted=self.predict(X), y_real=y)
 
     def get_params(self, deep=True):
         return super(MlcClassifierChains, self).get_params(deep)

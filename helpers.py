@@ -1,5 +1,3 @@
-# import autograd
-# import autograd.numpy as np
 import logging
 import time
 
@@ -11,8 +9,8 @@ from sklearn.datasets import load_svmlight_file
 from sklearn.model_selection import learning_curve
 
 import MlcLinReg
-from sparse_math_lib.logloss import log_likelihood_sp, log_likelihood
 from sparse_math_lib.gradient import gradient_sp, gradient
+from sparse_math_lib.logloss import log_likelihood_sp, log_likelihood
 
 # Comment when debugging with line_profiler
 profile = lambda f: f
@@ -20,6 +18,23 @@ profile = lambda f: f
 """
 This file contains helper functions
 """
+
+
+def split_train_test(X, y, train_ratio=0.8):
+    training_size = X.shape[0]
+    indices = list(range(training_size))
+    tr_indices = indices[:(int(len(indices) * train_ratio))]
+    ts_indices = indices[int(len(indices) * train_ratio) - 1:]
+
+    X_train = X[tr_indices]
+    y_train = y[tr_indices]
+    X_test = X[ts_indices]
+    y_test = y[ts_indices]
+
+    X_train.sort_indices()
+    y_train.sort_indices()
+
+    return X_train, y_train, X_test, y_test
 
 
 def load_mlc_dataset(
@@ -79,19 +94,7 @@ def load_mlc_dataset(
         )
     f.close()
     logging.info("Finished Loading")
-    return X, y, header_info
-
-
-def auto_gradient(X, W, y):
-    """
-    Gradient of log_likelihood calculated with use of autograd package
-    :param X: Training examples
-    :param W: Weight vector
-    :param y: True Categories of the training examples X
-    :return: Gradient
-    """
-    gradient = autograd.grad(log_likelihood, argnum=1)
-    return gradient(X, W, y)
+    return X, y
 
 
 @profile
@@ -115,7 +118,7 @@ def grad_check(X, W, y):
         W_tmpP = np.zeros(W.shape)
         W_tmpP[:] = W
 
-        W_tmpM = np.zeros((W.shape))
+        W_tmpM = np.zeros(W.shape)
         W_tmpM[:] = W
 
         W_tmpP[k] = W_tmpP[k] + epsilon
@@ -199,6 +202,16 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
 
     n_jobs : integer, optional
         Number of jobs to run in parallel (default 1).
+
+    train_sizes : array-like, shape (n_ticks,), dtype float or int
+        Relative or absolute numbers of training examples that will be used to
+        generate the learning curve. If the dtype is float, it is regarded as a
+        fraction of the maximum size of the training set (that is determined
+        by the selected validation method), i.e. it has to be within (0, 1].
+        Otherwise it is interpreted as absolute sizes of the training sets.
+        Note that for classification the number of samples usually have to
+        be big enough to contain at least one sample from each class.
+        (default: np.linspace(0.1, 1.0, 5))
     """
     plt.figure()
     plt.title(title)
@@ -242,9 +255,11 @@ def report(results, n_top=3):
 
 def generate_load_cache(filename, X_train, y_train, batch_size):
     """
-    Split X_train, y_train, in batches and save them
+    Split X_train, y_train, in batches and save them.
+    :param filename
     :param X_train:
     :param y_train:
+    :param batch_size:
     :return:
     """
     try:
@@ -265,6 +280,7 @@ def generate_load_cache(filename, X_train, y_train, batch_size):
         np.savez(filename + "_batches.npz", a=cache)
     return cache
 
+
 def shuffle_dataset(X, y, copy=True):
     data_size = y.shape[0]
 
@@ -282,11 +298,11 @@ def shuffle_dataset(X, y, copy=True):
     return X_train, y_train
 
 
-
 def batch_iter(y, X, batch_size, shuffle=False):
     for i in np.arange(0, X.shape[0], int(batch_size)):
         limit = (i + batch_size)
-        if limit > X.shape[0]: limit = X.shape[0]
+        if limit > X.shape[0]:
+            limit = X.shape[0]
         if scipy.sparse.issparse(X):
             yield (X[i:limit, :], y[i:limit, :])
         else:
@@ -299,11 +315,13 @@ def batch_iter_linreg_test(y, X, batch_size, shuffle=False):
     """
     for i in np.arange(0, X.shape[0], int(batch_size)):
         limit = (i + batch_size)
-        if limit > X.shape[0]: limit = X.shape[0]
+        if limit > X.shape[0]:
+            limit = X.shape[0]
         if scipy.sparse.issparse(X):
             yield (X[i:limit, :], y[i:limit])
         else:
             yield (X[i:limit, :], y[i:limit])
+
 
 def size(x, str1=' '):
     """
@@ -362,6 +380,7 @@ def load_sparse_csr(filename):
                          shape=loader['shape'])
 
 
+# noinspection PyUnresolvedReferences
 @profile
 def concatenate_csr_matrices_by_columns(matrix1, matrix2):
     """
@@ -379,6 +398,7 @@ def concatenate_csr_matrices_by_columns(matrix1, matrix2):
 
     if csr:
         matrix1 = matrix1.T.asformat('csr')
+        # noinspection PyUnresolvedReferences
         matrix2 = matrix2.T.asformat('csr')
     else:
         matrix1 = matrix1.T

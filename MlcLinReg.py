@@ -10,7 +10,6 @@ from sparse_math_lib import mathutil
 # Comment when debugging with line profiler
 profile = lambda f: f
 
-
 """
 This is an implementation of Linear Regression with SGD solver aiming at performance when training
 examples matrix is a sparse matrix
@@ -90,10 +89,9 @@ class MlcLinReg:
 
         batches = list(self.batch_iter(y, X, batch_size))
         W = self.w
-        l = self.l
+        learning_rate = self.l
         velocity = self.velocity
         alpha = self.alpha
-
 
         for epoch in range(0, epochs):
             old_loss = np.inf
@@ -114,7 +112,7 @@ class MlcLinReg:
                     break
                 old_loss = loss
 
-                velocity = (alpha * velocity) - (l * gradient)
+                velocity = (alpha * velocity) - (learning_rate * gradient)
                 W = W + velocity
 
             self.w = W
@@ -145,7 +143,7 @@ class MlcLinReg:
         epoch_loss = []
         velocity = 0.9
         alpha = 0.5
-        l = self.l
+        learning_rate = self.l
         for epoch in np.arange(0, epochs):
             old_loss = np.inf
             # Shuffle X, y
@@ -164,10 +162,10 @@ class MlcLinReg:
 
                 gradient = sparse_math_lib.gradient.gradient(sampleX, self.w, sampley)
 
-                #self.w = self.w - self.l * gradient
+                # self.w = self.w - self.l * gradient
 
-                velocity = (alpha * velocity) - (l * gradient)
-                self.w= self.w + velocity
+                velocity = (alpha * velocity) - (learning_rate * gradient)
+                self.w = self.w + velocity
 
             self.lossHistory.append(np.average(epoch_loss))
             logging.info("Ending epoch %i, average loss -> %f", epoch, np.average(epoch_loss))

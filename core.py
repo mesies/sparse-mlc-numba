@@ -1,8 +1,6 @@
-from helpers import load_mlc_dataset, tic, toc
-from MlcLinReg import MlcLinReg
 from MlcClassifierChains import MlcClassifierChains
-from helpers import save_sparse_csr, load_sparse_csr
-import scipy.sparse as sp
+from MlcScore import score_accuracy
+from helpers import load_mlc_dataset, tic, toc
 
 ti = tic()
 # DATASET_TRAIN_SET_FILENAME = "data\\deliciousLarge_train.txt"
@@ -35,21 +33,20 @@ DATASET_TEST_SET_FILENAME = "data\\wiki10_test.txt"
 # except IOError:
 #     print("Loading Failed")
 print("Started loading from dataset")
-X_train, y_train, header_info_train = load_mlc_dataset(DATASET_TRAIN_SET_FILENAME,
-                                                       header=True,
-                                                       concatbias=True)
+X_train, y_train = load_mlc_dataset(DATASET_TRAIN_SET_FILENAME,
+                                    header=True,
+                                    concatbias=True)
 
-X_test, y_test, header_info_train = load_mlc_dataset(DATASET_TRAIN_SET_FILENAME,
-                                                     header=True,
-                                                     concatbias=True)
+X_test, y_test = load_mlc_dataset(DATASET_TRAIN_SET_FILENAME,
+                                  header=True,
+                                  concatbias=True)
 # save_sparse_csr("xtrain_big", X_train)
 # save_sparse_csr("xtest_big", X_test)
 # save_sparse_csr("ytrain_big", y_train)
 # save_sparse_csr("ytest_big", y_test)
 
 print("Started Fitting")
-mlc = MlcClassifierChains(MlcLinReg,
-                          learning_rate=0.01,
+mlc = MlcClassifierChains(learning_rate=0.01,
                           iterations=20,
                           sparse=True,
                           verbose=False,
@@ -59,8 +56,6 @@ mlc = MlcClassifierChains(MlcLinReg,
                           velocity=0.9)
 mlc.fit(X_train, y_train)
 y_pred = mlc.predict(X_test)
-
-from MlcScore import score_accuracy
 
 print(score_accuracy(y_pred, y_test))
 

@@ -7,8 +7,6 @@ import numpy as np
 # Comment when debugging with line profiler
 
 
-
-
 @numba.vectorize(['float64(float64)'], target='cpu')
 def sigmoid(x):
     """

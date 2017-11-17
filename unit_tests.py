@@ -1,13 +1,10 @@
 import unittest
 
 import numpy as np
-import scipy.sparse as sp
 
 import sparse_math_lib.sp_operations
-from sparse_math_lib import mathutil
-from sparse_math_lib.sp_operations import nonzero as nzt, mult_row, mult_row_sparse_cython
+from sparse_math_lib.sp_operations import nonzero as nzt, mult_row
 
-import joblib
 
 class MyTestCase(unittest.TestCase):
     """
@@ -33,7 +30,9 @@ class MyTestCase(unittest.TestCase):
         """
         Test helpers.concatenate_csc_matrices_by_columns
         """
+        import scipy.sparse as sp
         from helpers import concatenate_csr_matrices_by_columns
+
         A = np.array([
             [1., 2., 3.],
             [0., -1., 1.],
@@ -64,7 +63,9 @@ class MyTestCase(unittest.TestCase):
         Test MlcScore.score_accuracy
         :return:
         """
+        import scipy.sparse as sp
         from MlcScore import score_accuracy
+
         y = sp.csr_matrix([
             [1, 1, 1],
             [1, 0, 0]
@@ -94,12 +95,14 @@ class MyTestCase(unittest.TestCase):
             [1, 1, 1, 0, 0]
         ])
         ypred = sp.csr_matrix([
-            [0, 0, 0, 0 ,0]
+            [0, 0, 0, 0, 0]
         ])
 
-        #self.assertAlmostEqual(score_accuracy(ypred, y), 0.4)
+        # self.assertAlmostEqual(score_accuracy(ypred, y), 0.4)
 
     def test_non_zero_csc(self):
+        import scipy.sparse as sp
+
         y = np.zeros(12000, dtype=float)
         y[2] = 1.
         y[3] = 1
@@ -113,6 +116,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(t1, 0)
 
     def test_non_zero_csr(self):
+        import scipy.sparse as sp
 
         y = np.zeros(12000, dtype=float)
         y[2] = 1.
@@ -127,17 +131,18 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(t, 0)
 
     def test_gradient(self):
+        import os
+
         DATASET_FILENAME = "delicious_data.txt"
         DATASET_TRAIN_SET_FILENAME = "delicious_trSplit.txt"
         DATASET_TEST_SET_FILENAME = "delicious_tstSplit.txt"
 
+        DATASET_FILENAME = os.path.join('data', DATASET_FILENAME)
+        DATASET_TRAIN_SET_FILENAME = os.path.join('data', DATASET_TRAIN_SET_FILENAME)
+        DATASET_TEST_SET_FILENAME = os.path.join('data', DATASET_TEST_SET_FILENAME)
+
         from helpers import load_mlc_dataset
-        X, y, header_info = load_mlc_dataset(DATASET_FILENAME,
-                                             header=True,
-                                             concatbias=True)
-        DATASET_SIZE = int(header_info[0])
-        FEATURE_NUMBER = int(header_info[1])
-        LABEL_NUMBER = int(header_info[2])
+        X, y = load_mlc_dataset(DATASET_FILENAME, header=True, concatbias=True)
 
         f1 = open(DATASET_TRAIN_SET_FILENAME)
         train_ind = np.loadtxt(fname=f1, delimiter=" ", dtype=int)
@@ -164,8 +169,9 @@ class MyTestCase(unittest.TestCase):
         self.assertLessEqual(abs_max, 1e-4)
 
     def test_batch_iter(self):
-        import scipy.sparse as sp
         from helpers import batch_iter
+        import scipy.sparse as sp
+
         A = sp.csr_matrix(np.array(
             [
                 [1., 2., 3.],
@@ -185,6 +191,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(len(B), 5)
 
     def test_sparse_mult(self):
+        import scipy.sparse as sp
 
         A = sp.csr_matrix(np.array([
             [1., 2., 3.],
@@ -197,7 +204,7 @@ class MyTestCase(unittest.TestCase):
 
         # from sparse_math_lib.sp_operations import mult_row_sparse_cython
 
-        #after = mult_row_sparse_cython(A, B.reshape(3))
+        # after = mult_row_sparse_cython(A, B.reshape(3))
 
         after2 = mult_row(A, B)
         # t = np.max(np.abs(b4 - after))
@@ -206,10 +213,6 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(t, 0)
 
-    def test_job(self):
-        from joblib import Parallel, delayed
-        from math import sqrt
-        Parallel(n_jobs=2)(delayed(sqrt)(i ** 2) for i in range(10))
 
 if __name__ == '__main__':
     unittest.main()

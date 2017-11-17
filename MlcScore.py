@@ -2,25 +2,25 @@ import numpy as np
 from scipy import logical_and, logical_or
 
 
-def score_accuracy(ypredicted, yreal):
+def score_accuracy(y_predicted, y_real):
     """
-    score = sum((y AND ypred)/(y OR ypred)))
-    :param ypredicted:
-    :param yreal:
+                (   y_real AND y_predicted  )
+     score =    (  ------------------------ )
+                (   y_real OR y_predicted   )
+
+    :param y_predicted:
+    :param y_real:
     :return:
     """
 
-    s = 0.
-    if isinstance(ypredicted, np.ndarray):
-        yp = ypredicted
+    if isinstance(y_predicted, np.ndarray):
+        y_predicted = y_predicted.ravel()
     else:
-        yp = (ypredicted.toarray())
+        y_predicted = y_predicted.toarray().ravel()
 
-    yp = yp.ravel()
-    yr = yreal.toarray().ravel()
+    y_real = y_real.toarray().ravel()
 
-    ar = np.sum(1. * (logical_and(yr, yp)))
-    pr = np.sum(1. * (logical_or(yr, yp)))
-    s = ar / pr
+    numerator = np.sum(1. * (logical_and(y_real, y_predicted)))
+    denominator = np.sum(1. * (logical_or(y_real, y_predicted)))
 
-    return s
+    return numerator / denominator
