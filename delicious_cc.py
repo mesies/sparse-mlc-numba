@@ -22,9 +22,9 @@ def load_delicious():
     DATASET_TRAIN_SET_FILENAME = os.path.join('data', DATASET_TRAIN_SET_FILENAME)
     DATASET_TEST_SET_FILENAME = os.path.join('data', DATASET_TEST_SET_FILENAME)
 
-    X, y, header_info = load_mlc_dataset(DATASET_FILENAME,
-                                         header=True,
-                                         concatbias=True)
+    X, y = load_mlc_dataset(DATASET_FILENAME,
+                            header=True,
+                            concatbias=True)
     f1 = open(DATASET_TRAIN_SET_FILENAME)
     train_ind = np.loadtxt(fname=f1, delimiter=" ", dtype=int)
     f1.close()
@@ -53,15 +53,15 @@ X_train, y_train, X_test, y_test = load_delicious()
 X_train_s, y_train_s = shuffle_dataset(X_train, y_train)
 
 # Create train test split
-X_train, y_train = split_train_test(X_train_s, y_train_s)
+X_train, y_train, X_test, y_test = split_train_test(X_train_s, y_train_s)
 
 # learning_rate = 0.0227
 # iterations = 100
 # batch_size = 8000
 n = 1
 for i in range(0, n):
-    learning_rate = np.random.uniform(0.001, 0.05)
-    iterations = np.random.randint(200, 600)
+    learning_rate = np.random.uniform(0.005, 0.02)
+    iterations = np.random.randint(300, 500)
     batch_size = np.random.randint(1000, 5000)
 
     mlc = MlcClassifierChains(learning_rate=learning_rate,
@@ -77,8 +77,11 @@ for i in range(0, n):
     print(score_accuracy(y_pred, y_test))
     with open("results_random.txt", "a") as result_file:
         result_file.write(
-            str("% " + score_accuracy(y_pred, y_test)) + "  " + str(learning_rate) + " " + str(iterations) + "  " + str(
-                batch_size) + " %")
+            "% " +
+            str(score_accuracy(y_pred, y_test)) + "  " +
+            str(learning_rate) + " " + str(iterations) + "  " +
+            str(batch_size) +
+            " %")
 
 exit(1)
 

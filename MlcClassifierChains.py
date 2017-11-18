@@ -8,7 +8,7 @@ from sklearn.externals import six
 
 import MlcScore
 from MlcLinReg import MlcLinReg
-from helpers import concatenate_csr_matrices_by_columns, shuffle_dataset
+from helpers import shuffle_dataset
 
 # Comment when debugging with line profiler
 profile = lambda f: f
@@ -76,7 +76,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         self.trained.append(clf)
 
         # Add label 0 to features
-        X = concatenate_csr_matrices_by_columns(X_train, y_train[:, 0])
+        # X = concatenate_csr_matrices_by_columns(X_train, y_train[:, 0])
 
         self.label_dim = y_train.shape[1]
 
@@ -103,7 +103,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
             self.trained.append(clf)
 
             # Add label i to features
-            X = concatenate_csr_matrices_by_columns(X, y)
+            # X = concatenate_csr_matrices_by_columns(X, y)
         return self
 
     @profile
