@@ -1,0 +1,7 @@
+numba>=0.36.1
+tqdm>=4.15.0
+setuptools>=36.5.0
+matplotlib>=2.0.2
+scipy>=0.19.1
+numpy>=1.13.3
+scikit_learn>=0.19.1

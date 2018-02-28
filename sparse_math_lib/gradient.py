@@ -3,6 +3,9 @@ import numpy as np
 from sparse_math_lib.mathutil import sigmoid
 from sparse_math_lib.sp_operations import nonzero
 
+"""
+This file implements the gradient.
+"""
 profile = lambda f: f
 
 

@@ -21,6 +21,13 @@ This file contains helper functions
 
 
 def split_train_test(X, y, train_ratio=0.8):
+    """
+    Splits X, y into a train and a test set.
+    :param X:
+    :param y:
+    :param train_ratio:
+    :return:
+    """
     training_size = X.shape[0]
     indices = list(range(training_size))
     tr_indices = indices[:(int(len(indices) * train_ratio))]
@@ -282,6 +289,13 @@ def generate_load_cache(filename, X_train, y_train, batch_size):
 
 
 def shuffle_dataset(X, y, copy=True):
+    """
+    Shuffles X and y
+    :param X:
+    :param y:
+    :param copy:
+    :return:
+    """
     data_size = y.shape[0]
 
     shuffle_indices = np.random.permutation(np.arange(data_size))

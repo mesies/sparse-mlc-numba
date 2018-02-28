@@ -3,15 +3,10 @@ import numpy as np
 from scipy.sparse import csr_matrix, csc_matrix
 
 
-# import pyximport;
-# pyximport.install(setup_args={'include_dirs': np.get_include()})
-# from sparse_math_lib.cython_math import mult_cython
-
-
 @numba.jit('void(float64[:,:], float64[:], int32[:], int32[:], int64)',
            nopython=True
            )
-def mult_row_sparse_numba(result, B, resultrow, resultcol, lenrow):
+def mult_row_sparse_numba(result, matrix, result_row, result_col, lenrow):
     # result init zero
 
     # print numba.typeof(result)
@@ -21,9 +16,9 @@ def mult_row_sparse_numba(result, B, resultrow, resultcol, lenrow):
     # print numba.typeof(lenrow)
     # print numba.typeof(lencol)
     for i in xrange(0, lenrow):
-        row = np.take(resultrow, i)
-        col = np.take(resultcol, i)
-        result[row, col] *= np.take(B, col)
+        row = np.take(result_row, i)
+        col = np.take(result_col, i)
+        result[row, col] *= np.take(matrix, col)
 
 
 def nonzero(x):
@@ -118,11 +113,11 @@ def sum_of_vector_numba(result, x, sh):
     return result
 
 
-def mult_row(A, B):
-    if A.shape[0] != B.shape[1]:
+def mult_row(x, row_vector):
+    if x.shape[0] != row_vector.shape[1]:
         raise RuntimeError("Matrices haven't compatible size.")
-    result = np.zeros(A.shape)
-    mult_row_matrix_numba(B.ravel(), A.toarray(), result, A.shape[0], A.shape[1])
+    result = np.zeros(x.shape)
+    mult_row_matrix_numba(row_vector.ravel(), x.toarray(), result, x.shape[0], x.shape[1])
     return result
 
 
@@ -130,10 +125,10 @@ def mult_row(A, B):
            nopython=True,
            cache=True,
            nogil=True)
-def mult_col_matrix_numba(col_matrix, matrix, result, dim0, dim1):
+def mult_col_matrix_numba(column_vector, matrix, result, dim0, dim1):
     """
     Optimised matrix element-wise multiplication when one matrix
-    :param col_matrix:
+    :param column_vector:
     :param matrix:
     :param result:
     :param dim0:
@@ -142,17 +137,17 @@ def mult_col_matrix_numba(col_matrix, matrix, result, dim0, dim1):
     """
     for i in range(0, dim0):
         for j in range(0, dim1):
-            result[i, j] = col_matrix[i] * matrix[i, j]
+            result[i, j] = column_vector[i] * matrix[i, j]
 
 
 @numba.jit('void(float64[:], float64[:,:], float64[:,:], int64, int64)',
            nopython=True,
            nogil=True
            )
-def mult_row_matrix_numba(row_matrix, matrix, result, dim0, dim1):
+def mult_row_matrix_numba(row_vector, matrix, result, dim0, dim1):
     """
     Optimised matrix element-wise multiplication when one matrix
-    :param row_matrix:
+    :param row_vector:
     :param matrix:
     :param result:
     :param dim0:
@@ -161,4 +156,4 @@ def mult_row_matrix_numba(row_matrix, matrix, result, dim0, dim1):
     """
     for i in range(0, dim0):
         for j in range(0, dim1):
-            result[i, j] = row_matrix[j] * matrix[i, j]
+            result[i, j] = row_vector[j] * matrix[i, j]
