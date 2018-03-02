@@ -2,7 +2,7 @@ import numpy as np
 import scipy
 from scipy.sparse import csr_matrix
 
-from sparse_math_lib.sp_operations import nonzero, mult_col_matrix_numba
+from sparse_math_lib.sp_operations import nonzero, mult_col
 
 profile = lambda f: f
 
@@ -16,7 +16,7 @@ def log_likelihood_sp(X, W, y):
     :param y:
     :return:
     """
-
+    # W_1dim = np.reshape(W, (W.shape[0], 1))
     # -1 ^ y
     signus = np.ones(y.shape)
     if y.nnz != 0:
@@ -25,15 +25,16 @@ def log_likelihood_sp(X, W, y):
 
     # (XW) * (-1 ^ y)
     xw = X.dot(W)
-    xw_hat = np.zeros(signus.shape)
-    mult_col_matrix_numba(xw, signus, xw_hat, signus.shape[0], signus.shape[1])
+    # initialise xw_hat
+    # xw_hat = np.zeros(signus.shape)
+    # mult_col_matrix_numba(xw, signus, xw_hat, signus.shape[0], signus.shape[1])
+    xw_hat = mult_col(xw, signus)
 
     logg = np.logaddexp(0, xw_hat)
 
-    # Minus applied on summ function
-    # result = 0.
-    # result = sum_of_vector_numba(result, -logg[:, 0], logg.shape[0])
     result = np.sum(logg[:, None], axis=0)  # - 0.5 * 0.01 * np.linalg.norm(W)
+    assert result.shape[0] == 1
+
     return result
 
 

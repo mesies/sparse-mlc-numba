@@ -8,8 +8,7 @@ import scipy.sparse as sp
 from sklearn.datasets import load_svmlight_file
 from sklearn.model_selection import learning_curve
 
-import MlcLinReg
-from sparse_math_lib.gradient import gradient_sp, gradient
+from sparse_math_lib.gradient import gradient_sp
 from sparse_math_lib.logloss import log_likelihood_sp, log_likelihood
 
 # Comment when debugging with line_profiler
@@ -22,7 +21,7 @@ This file contains helper functions
 
 def split_train_test(X, y, train_ratio=0.8):
     """
-    Splits X, y into a train and a test set.
+    Splits X, y into a train and a test set. Returns X_train, y_train, X_test, y_test
     :param X:
     :param y:
     :param train_ratio:
@@ -38,8 +37,10 @@ def split_train_test(X, y, train_ratio=0.8):
     X_test = X[ts_indices]
     y_test = y[ts_indices]
 
-    X_train.sort_indices()
-    y_train.sort_indices()
+    if not isinstance(X_train, np.ndarray):
+        X_train.sort_indices()
+        y_train.sort_indices()
+
 
     return X_train, y_train, X_test, y_test
 
@@ -113,9 +114,10 @@ def grad_check(X, W, y):
     :param y: True Categories of the training examples X
     """
     if scipy.sparse.issparse(X):
-        true_gradient = gradient_sp(X=X, W=W, y=y)
+        calc_gradient = gradient_sp(X=X, W=W, y=y)
     else:
-        true_gradient = gradient(X=X, W=W, y=y)
+        # true_gradient = gradient(X=X, W=W, y=y)
+        raise NotImplemented
 
     epsilon = 1e-6
     num_grad = np.zeros(W.shape[0])
@@ -141,10 +143,11 @@ def grad_check(X, W, y):
             Ewminus = log_likelihood(X, W_tmpM, y)
 
         num_grad[k] = np.divide((np.subtract(Ewplus, Ewminus)), np.multiply(2, epsilon))
-    true_gradient.reshape((W.shape[0], 1))
+    calc_gradient = np.reshape(calc_gradient, calc_gradient.shape[0])
+    calc_gradient.reshape((W.shape[0], 1))
     num_grad.reshape((W.shape[0], 1))
 
-    abs_max = np.linalg.norm(true_gradient - num_grad) / np.linalg.norm(true_gradient + num_grad)
+    abs_max = np.linalg.norm(calc_gradient - num_grad) / np.linalg.norm(calc_gradient + num_grad)
     return abs_max
 
 
@@ -282,7 +285,7 @@ def generate_load_cache(filename, X_train, y_train, batch_size):
         X_train = shuffled_tx
         y_train = shuffled_y
         # generate batches -> insert to list
-        cache = list(MlcLinReg.MlcLinReg.batch_iter(MlcLinReg.MlcLinReg(), y_train, X_train, batch_size))
+        cache = list(batch_iter(y_train, X_train, batch_size))
         # save list as filename
         np.savez(filename + "_batches.npz", a=cache)
     return cache
@@ -361,6 +364,7 @@ def toc(start_time, str1=" "):
     :param str1: Extra string to be included in the beginning of print statement
     """
     print(str1 + " " + "--- %s seconds ---" % (time.time() - start_time))
+    return time.time() - start_time
 
 
 def typu(x):

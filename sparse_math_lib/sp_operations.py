@@ -114,6 +114,12 @@ def sum_of_vector_numba(result, x, sh):
 
 
 def mult_row(x, row_vector):
+    if row_vector.shape[0] != 1:
+        row_vector = np.reshape(row_vector, (row_vector.shape[0], 1))
+    elif row_vector.shape[0] != 1:
+        row_vector = np.reshape(row_vector, (1, row_vector.shape[0]))
+    if x.shape[0] != row_vector.shape[1]:
+        row_vector = row_vector.T
     if x.shape[0] != row_vector.shape[1]:
         raise RuntimeError("Matrices haven't compatible size.")
     result = np.zeros(x.shape)
@@ -157,3 +163,13 @@ def mult_row_matrix_numba(row_vector, matrix, result, dim0, dim1):
     for i in range(0, dim0):
         for j in range(0, dim1):
             result[i, j] = row_vector[j] * matrix[i, j]
+
+
+def mult_col(x, col_vector):
+    if x.shape[0] == 1:
+        x_newsize = np.reshape(x, (x.shape[1]))
+    else:
+        x_newsize = np.reshape(x, (x.shape[0]))
+    xw_hat = np.zeros(col_vector.shape)
+    mult_col_matrix_numba(x_newsize, col_vector, xw_hat, col_vector.shape[0], col_vector.shape[1])
+    return xw_hat

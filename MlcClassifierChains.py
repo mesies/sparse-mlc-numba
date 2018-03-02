@@ -56,9 +56,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         logging.info("       Commencing Classifier Chain training")
         logging.info("***************************************************")
 
-        if self.cache is None:
-            # Shuffle Data
-            shuffle_dataset(X_train, y_train)
+        shuffle_dataset(X_train, y_train)
 
         # Train Classifier 0
         X = X_train

@@ -31,7 +31,7 @@ class MlcLinReg:
         self.batch_size = batch_size
         self.verbose = verbose
         self.grad_check = grad_check
-        self.l = learning_rate
+        self.learning_rate = learning_rate
         self.iterations = iterations
         self.w = {}
         self.sparse = sparse
@@ -54,7 +54,7 @@ class MlcLinReg:
         """
 
         logging.info("Started Fitting Dataa")
-        self.w = (np.random.uniform(size=(X.shape[1],)))
+        self.w = (np.random.uniform(size=(X.shape[1], 1)))
 
         if self.grad_check:
             logging.info("Commencing Gradient Check")
@@ -78,7 +78,7 @@ class MlcLinReg:
     @profile
     def stochastic_gradient_descent_sparse(self, X, y, tolerance, epochs=2000, batch_size=10):
         logging.info("Commencing sparse-aware SGD")
-        logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
+        logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.learning_rate)
         epoch_loss = []
         # learning rate e, momentum parameter a,
 
@@ -89,7 +89,7 @@ class MlcLinReg:
 
         batches = list(self.batch_iter(y, X, batch_size))
         W = self.w
-        learning_rate = self.l
+        L = self.learning_rate
         velocity = self.velocity
         alpha = self.alpha
 
@@ -101,9 +101,9 @@ class MlcLinReg:
 
             for batch_ind in shuffle_indices:
                 (sampleX, sampley) = batches[batch_ind]
-
+                # sampleX, sampley = shuffle(sampleX, sampley)
                 loss = sparse_math_lib.logloss.log_likelihood_sp(X=sampleX, y=sampley, W=W)
-                gradient = sparse_math_lib.gradient.gradient_sp(sampleX, W, sampley)
+                gradient = sparse_math_lib.gradient.gradient_sp(X=sampleX, W=W, y=sampley)
 
                 epoch_loss.append(loss)
                 grads.append(gradient)
@@ -112,19 +112,25 @@ class MlcLinReg:
                     break
                 old_loss = loss
 
-                velocity = (alpha * velocity) - (learning_rate * gradient)
+                velocity = (alpha * velocity) - (L * gradient)
+                assert velocity.shape == self.w.shape
+
                 W = W + velocity
 
+            assert self.w.shape == W.shape
             self.w = W
             self.lossHistory.append(np.average(epoch_loss))
-            logging.info("Ending epoch %i, average loss -> %f Epoch gradient AVG -> %f", epoch, np.average(epoch_loss),
-                         np.average(grads))
+            # print("Ending epoch {}, average loss -> {} Epoch gradient AVG -> {}".format(
+            #       epoch,
+            #       np.average(epoch_loss),
+            #       np.average(grads)))
             # if(np.average(epoch_loss) > old_loss_ep):
             #     break
             # old_loss_ep = np.average(epochloss)
 
         return self.w
 
+    # In helpers remove dependency
     @profile
     def batch_iter(self, y, tx, batch_size, num_batches=1, shuffle=False):
         return helpers.batch_iter(y, tx, batch_size)
@@ -139,11 +145,11 @@ class MlcLinReg:
     def stochastic_gradient_descent(self, X, y, tolerance, epochs=2000, batch_size=10):
 
         logging.info("Commencing SGD")
-        logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.l)
+        logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.learning_rate)
         epoch_loss = []
         velocity = 0.9
         alpha = 0.5
-        learning_rate = self.l
+        learning_rate = self.learning_rate
         for epoch in np.arange(0, epochs):
             old_loss = np.inf
             # Shuffle X, y
