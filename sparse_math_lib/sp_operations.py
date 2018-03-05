@@ -1,6 +1,6 @@
 import numba
 import numpy as np
-from scipy.sparse import csr_matrix, csc_matrix
+from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
 
 
 @numba.jit('void(float64[:,:], float64[:], int32[:], int32[:], int64)',
@@ -113,19 +113,70 @@ def sum_of_vector_numba(result, x, sh):
     return result
 
 
-def mult_row(x, row_vector):
-    if row_vector.shape[0] != 1:
-        row_vector = np.reshape(row_vector, (row_vector.shape[0], 1))
-    elif row_vector.shape[0] != 1:
-        row_vector = np.reshape(row_vector, (1, row_vector.shape[0]))
-    if x.shape[0] != row_vector.shape[1]:
-        row_vector = row_vector.T
-    if x.shape[0] != row_vector.shape[1]:
-        raise RuntimeError("Matrices haven't compatible size.")
-    result = np.zeros(x.shape)
-    mult_row_matrix_numba(row_vector.ravel(), x.toarray(), result, x.shape[0], x.shape[1])
-    return result
+def mult_row_raw(x, row_vector):
+    result_data = x.data.copy()
+    result_row = np.zeros(x.data.shape[0], dtype=int)
+    result_col = np.zeros(x.data.shape[0], dtype=int)
 
+    mult_row_matrix_numba(row_vector.ravel(),
+                          x.indptr,
+                          x.indices,
+                          result_data,
+                          result_row,
+                          result_col,
+                          x.shape[0],
+                          x.shape[1])
+
+    # We must return coo
+    # result = csr_matrix((result_data, x.indices, x.indptr), shape=x.shape)
+    # assert result.shape == x.shape
+
+    return result_data, result_row, result_col
+
+
+def mult_row(x, row_vector):
+    result_data = x.data.copy()
+    result_row = np.zeros(x.data.shape[0], dtype=int)
+    result_col = np.zeros(x.data.shape[0], dtype=int)
+
+    mult_row_matrix_numba(row_vector.ravel(),
+                          x.indptr,
+                          x.indices,
+                          result_data,
+                          result_row,
+                          result_col,
+                          x.shape[0],
+                          x.shape[1])
+
+    # We must return coo
+    # result = csr_matrix((result_data, x.indices, x.indptr), shape=x.shape)
+    # assert result.shape == x.shape
+
+    return coo_matrix((result_data, (result_row, result_col)), shape=x.shape)
+
+
+@numba.jit('void(float64[:], int32[:], int32[:], float64[:], int32[:], int32[:], int64, int64)',
+           nopython=True,
+           nogil=True
+           )
+def mult_row_matrix_numba(row_vector,
+                          x_indptr,
+                          x_indices,
+                          result_data,
+                          result_row,
+                          result_col,
+                          dim0,
+                          dim1):
+    # i -> row
+    h = 0
+
+    for i in range(0, dim0):
+        result_data[x_indptr[i]:x_indptr[i + 1]] *= row_vector[i]
+        col_ind = x_indices[x_indptr[i]:x_indptr[i + 1]]
+        for k in col_ind:
+            result_col[h] = (k)
+            result_row[h] = (i)
+            h += 1
 
 @numba.jit('void(float64[:], float64[:,:], float64[:,:], int64, int64)',
            nopython=True,
@@ -146,23 +197,7 @@ def mult_col_matrix_numba(column_vector, matrix, result, dim0, dim1):
             result[i, j] = column_vector[i] * matrix[i, j]
 
 
-@numba.jit('void(float64[:], float64[:,:], float64[:,:], int64, int64)',
-           nopython=True,
-           nogil=True
-           )
-def mult_row_matrix_numba(row_vector, matrix, result, dim0, dim1):
-    """
-    Optimised matrix element-wise multiplication when one matrix
-    :param row_vector:
-    :param matrix:
-    :param result:
-    :param dim0:
-    :param dim1:
-    :return:
-    """
-    for i in range(0, dim0):
-        for j in range(0, dim1):
-            result[i, j] = row_vector[j] * matrix[i, j]
+
 
 
 def mult_col(x, col_vector):
@@ -175,7 +210,14 @@ def mult_col(x, col_vector):
     return xw_hat
 
 
+def col_row_sum_raw(data, row, col, shape0, shape1):
+    result = np.zeros((shape1))
+    col_row_sum_numba(result, data, row, col, shape0, shape1, data.shape[0])
+    return np.reshape(result, (1, result.shape[0]))
+
 def coo_row_sum(A):
+    if not isinstance(A, coo_matrix):
+        raise NotImplementedError
     result = np.zeros((A.shape[1]))
     col_row_sum_numba(result, A.data, A.row, A.col, A.shape[0], A.shape[1], A.data.shape[0])
     return np.reshape(result, (1, result.shape[0]))
