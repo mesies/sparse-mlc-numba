@@ -18,13 +18,13 @@ examples matrix is a sparse matrix
 
 class MlcLinReg:
     def __init__(self,
-                 learning_rate=0.0001,
-                 iterations=1000,
+                 learning_rate=0.001,
+                 iterations=100,
                  sparse=True,
                  verbose=False,
                  grad_check=False,
-                 batch_size=20,
-                 alpha=0.5,
+                 batch_size=256,
+                 alpha=0.9,
                  velocity=1,
                  cache=None):
 
@@ -96,6 +96,7 @@ class MlcLinReg:
             old_loss = np.inf
 
             grads = []
+            epoch_loss = []
             shuffle_indices = np.random.permutation(np.arange(len(batches)))
 
             for batch_ind in shuffle_indices:
@@ -111,10 +112,13 @@ class MlcLinReg:
                     break
                 old_loss = loss
 
-                velocity = (alpha * velocity) - (L * gradient)
+                # Nesterov momentum
+                velocity = (alpha * velocity) + (L * gradient)
                 assert velocity.shape == self.w.shape
 
-                W = W + velocity
+                W = W - velocity
+
+                # W = W - (L * gradient)
 
             assert self.w.shape == W.shape
             self.w = W
@@ -125,7 +129,7 @@ class MlcLinReg:
             #       np.average(grads)))
             # if(np.average(epoch_loss) > old_loss_ep):
             #     break
-            # old_loss_ep = np.average(epochloss)
+            # old_loss = np.average(epoch_loss)
 
         return self.w
 
