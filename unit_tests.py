@@ -196,12 +196,11 @@ class MyTestCase(unittest.TestCase):
         A = sp.csr_matrix(np.array([
             [1., 2., 3.],
             [0., -1., 1.],
-            [3., 4., 5.],
-            [1., 2., 3.]]))
+            [3., 4., 5.]]))
         B = (np.array([
-            [1., 2., 3., 4]
+            [1., 2., 3.]
         ]))
-        b4 = A.multiply(B.T)
+        b4 = A.multiply(B[:, np.newaxis])
 
         # from sparse_math_lib.sp_operations import mult_row_sparse_cython
 
@@ -210,7 +209,7 @@ class MyTestCase(unittest.TestCase):
         after2 = mult_row(A, B)
         # t = np.max(np.abs(b4 - after))
 
-        t = np.max(np.abs(b4 - after2.toarray()))
+        t = np.max(np.abs(b4 - after2))
 
         self.assertEqual(t, 0)
 

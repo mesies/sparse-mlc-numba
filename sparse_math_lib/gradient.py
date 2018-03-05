@@ -1,7 +1,7 @@
 import numpy as np
 
 from sparse_math_lib.mathutil import sigmoid
-from sparse_math_lib.sp_operations import nonzero, mult_row_raw, col_row_sum_raw
+from sparse_math_lib.sp_operations import nonzero, coo_row_sum
 
 """
 This file implements the gradient.
@@ -33,18 +33,16 @@ def gradient_sp(X, W, y):
         sdotp[resultrow] -= 1
     # #############################################
     # # (sigm(XW) - y) * X,T
-
-    # in_sum = X.multiply(sdotp)
-    ######in_sum = mult_row(X, sdotp)
-    data, row, col = mult_row_raw(X, sdotp)
+    # d = X.toarray()
+    in_sum = X.multiply(sdotp)
+    # in_sum = sp.csc_matrix(in_sum)
+    # in_sum = np.multiply(d, sdotp)
     ############################################Doable
     # result = np.zeros(X.shape[1], dtype=float)
     # sum_rows_of_matrix_numba(in_sum, result, in_sum.shape[0], in_sum.shape[1])
     # result = np.sum(in_sum, axis=0).A
     # result = (in_sum).sum(axis=0).A # Best
-
-    ####result = coo_row_sum(in_sum)
-    result = col_row_sum_raw(data, row, col, X.shape[0], X.shape[1])
+    result = coo_row_sum(in_sum)
     # assert result.shape == W_1dim.shape
 
     return result.T
