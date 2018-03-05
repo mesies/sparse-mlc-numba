@@ -1,7 +1,7 @@
 import numpy as np
 
 from sparse_math_lib.mathutil import sigmoid
-from sparse_math_lib.sp_operations import nonzero
+from sparse_math_lib.sp_operations import nonzero, coo_row_sum
 
 """
 This file implements the gradient.
@@ -19,10 +19,7 @@ def gradient_sp(X, W, y):
        :return: Gradient
        """
     # sigm(XW) - y
-    # W_1dim = np.reshape(W, (W.shape[0], 1))
-
-    dotp = sigmoid(X.dot(W))
-    sdotp = dotp
+    sdotp = sigmoid(X.dot(W))
 
     # ############################################Doable
     if y.nnz != 0:
@@ -36,24 +33,16 @@ def gradient_sp(X, W, y):
         sdotp[resultrow] -= 1
     # #############################################
     # # (sigm(XW) - y) * X,T
-    # G = X.tocsc()
-    # mult makes X coo
-    # sdotp = sp.csc_matrix(sdotp.reshape((sdotp.shape[0],1)))
+    # d = X.toarray()
     in_sum = X.multiply(sdotp)
-    # in_sum = (X.multiply((sdotp[:, np.newaxis]))).A  # BEST
-
-    # in_sum = np.multiply(sdotp, X.toarray())
-    # in_sum = mult_row(X, sdotp)
-    # Request nnz, use for mult
-
+    # in_sum = sp.csc_matrix(in_sum)
+    #in_sum = np.multiply(d, sdotp)
     ############################################Doable
     # result = np.zeros(X.shape[1], dtype=float)
     # sum_rows_of_matrix_numba(in_sum, result, in_sum.shape[0], in_sum.shape[1])
-    result = np.sum(in_sum, axis=0).A  # - 0.01 * np.linalg.norm(W)
-    # result = sp.csr_matrix(in_sum).sum(axis=0).A1
-
-    # ONLY THAT DIFF
-    # result = np.reshape(result, W_1dim.shape)
+    # result = np.sum(in_sum, axis=0).A
+    # result = (in_sum).sum(axis=0).A # Best
+    result = coo_row_sum(in_sum)
     # assert result.shape == W_1dim.shape
 
     return result.T

@@ -213,6 +213,21 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(t, 0)
 
+    def test_sparse_coo_sum(self):
+        from sparse_math_lib.sp_operations import coo_row_sum
+        import scipy.sparse as sp
+        A = sp.coo_matrix(np.array([
+            [1., 2., 3.],
+            [0., -1., 1.],
+            [1., 2., 3.],
+            [1., 2., 3.]]))
+        B = (np.array([
+            [3., 5., 10.]
+        ]))
+        C = coo_row_sum(A)
+        t = np.max(np.abs(B - C))
+        self.assertAlmostEqual(t, 0)
+
 
 if __name__ == '__main__':
     unittest.main()

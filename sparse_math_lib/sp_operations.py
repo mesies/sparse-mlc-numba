@@ -173,3 +173,18 @@ def mult_col(x, col_vector):
     xw_hat = np.zeros(col_vector.shape)
     mult_col_matrix_numba(x_newsize, col_vector, xw_hat, col_vector.shape[0], col_vector.shape[1])
     return xw_hat
+
+
+def coo_row_sum(A):
+    result = np.zeros((A.shape[1]))
+    col_row_sum_numba(result, A.data, A.row, A.col, A.shape[0], A.shape[1], A.data.shape[0])
+    return np.reshape(result, (1, result.shape[0]))
+
+
+# Parallel??
+@numba.jit('void(float64[:], float64[:], int32[:], int32[:], int64, int64, int64)',
+           nopython=True,
+           nogil=True)
+def col_row_sum_numba(result, data, row_ind, col_ind, row_no, col_no, data_no):
+    for k in range(0, data_no):
+        result[col_ind[k]] += data[k]

@@ -44,7 +44,6 @@ class MlcLinReg:
         else:
             logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.DEBUG)
 
-    @profile
     def fit(self, X, y):
         """
         Fits the classifier using X and y as training examples
@@ -131,7 +130,6 @@ class MlcLinReg:
         return self.w
 
     # In helpers remove dependency
-    @profile
     def batch_iter(self, y, tx, batch_size, num_batches=1, shuffle=False):
         return helpers.batch_iter(y, tx, batch_size)
 
