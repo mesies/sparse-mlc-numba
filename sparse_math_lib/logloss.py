@@ -4,7 +4,15 @@ from scipy.sparse import csr_matrix
 
 from sparse_math_lib.sp_operations import nonzero, mult_col
 
+"""
+Log loss implementation.
+"""
 profile = lambda f: f
+
+
+# '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
+# as few lines as possible each time line_profiler is run a lambda is used
+# Comment when debugging with line profiler
 
 
 # Optimised
@@ -16,7 +24,6 @@ def log_likelihood_sp(X, W, y):
     :param y:
     :return:
     """
-    # W_1dim = np.reshape(W, (W.shape[0], 1))
     # -1 ^ y
     signus = np.ones(y.shape)
     if y.nnz != 0:
@@ -25,14 +32,11 @@ def log_likelihood_sp(X, W, y):
 
     # (XW) * (-1 ^ y)
     xw = X.dot(W)
-    # initialise xw_hat
-    # xw_hat = np.zeros(signus.shape)
-    # mult_col_matrix_numba(xw, signus, xw_hat, signus.shape[0], signus.shape[1])
     xw_hat = mult_col(xw, signus)
 
     logg = np.logaddexp(0, xw_hat)
 
-    result = np.sum(logg[:, None], axis=0)  # - 0.5 * 0.01 * np.linalg.norm(W)
+    result = np.sum(logg[:, None], axis=0)
     assert result.shape[0] == 1
 
     return result

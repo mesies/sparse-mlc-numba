@@ -2,11 +2,6 @@ import numba
 import numpy as np
 
 
-# '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
-# as few lines as possible each time line_profiler is run a lambda is used
-# Comment when debugging with line profiler
-
-
 @numba.vectorize(['float64(float64)'], target='cpu')
 def sigmoid(x):
     """

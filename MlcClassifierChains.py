@@ -10,9 +10,12 @@ import MlcScore
 from MlcLinReg import MlcLinReg
 from helpers import shuffle_dataset
 
-# Comment when debugging with line profiler
 profile = lambda f: f
 
+
+# '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
+# as few lines as possible each time line_profiler is run a lambda is used
+# Comment when debugging with line profiler
 
 class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
     def __init__(self,
@@ -104,7 +107,6 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
             # X = concatenate_csr_matrices_by_columns(X, y)
         return self
 
-    @profile
     def predict(self, X_test):
         """
         Predicts the labels of X_test

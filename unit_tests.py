@@ -5,11 +5,13 @@ import numpy as np
 import sparse_math_lib.sp_operations
 from sparse_math_lib.sp_operations import nonzero as nzt, mult_row
 
+"""
+Unit tests for critical parts of the classifier.
+"""
+
 
 class MyTestCase(unittest.TestCase):
-    """
-    Unit tests for some parts of the classifier.
-    """
+
 
     def test_sum_rows(self):
         """
@@ -101,6 +103,10 @@ class MyTestCase(unittest.TestCase):
         # self.assertAlmostEqual(score_accuracy(ypred, y), 0.4)
 
     def test_non_zero_csc(self):
+        """
+        Tests nonzero when matrix is CSC
+        :return:
+        """
         import scipy.sparse as sp
 
         y = np.zeros(12000, dtype=float)
@@ -116,6 +122,10 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(t1, 0)
 
     def test_non_zero_csr(self):
+        """
+        Tests implementation of nonzero when matrix is CSR
+        :return:
+        """
         import scipy.sparse as sp
 
         y = np.zeros(12000, dtype=float)
@@ -131,6 +141,10 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(t, 0)
 
     def test_gradient(self):
+        """
+        Validates the gradient using finite differences.
+        :return:
+        """
         import os
 
         DATASET_FILENAME = "delicious_data.txt"
@@ -169,6 +183,10 @@ class MyTestCase(unittest.TestCase):
         self.assertLessEqual(abs_max, 1e-4)
 
     def test_batch_iter(self):
+        """
+        Tests batching function
+        :return:
+        """
         from helpers import batch_iter
         import scipy.sparse as sp
 
@@ -191,6 +209,10 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(len(B), 5)
 
     def test_sparse_mult(self):
+        """
+        Tests (Matrix X column vector) element-wise multiplication
+        :return:
+        """
         import scipy.sparse as sp
 
         A = sp.csr_matrix(np.array([
@@ -203,18 +225,17 @@ class MyTestCase(unittest.TestCase):
         ]))
         b4 = A.multiply(B.T)
 
-        # from sparse_math_lib.sp_operations import mult_row_sparse_cython
-
-        # after = mult_row_sparse_cython(A, B.reshape(3))
-
         after2 = mult_row(A, B)
-        # t = np.max(np.abs(b4 - after))
 
         t = np.max(np.abs(b4 - after2.toarray()))
 
         self.assertEqual(t, 0)
 
     def test_sparse_coo_sum(self):
+        """
+        Tests summation of columns when input matrix is COO.
+        :return:
+        """
         from sparse_math_lib.sp_operations import coo_row_sum
         import scipy.sparse as sp
         A = sp.coo_matrix(np.array([

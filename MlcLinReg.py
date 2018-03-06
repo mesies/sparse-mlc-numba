@@ -9,7 +9,9 @@ from sparse_math_lib import mathutil
 
 # Comment when debugging with line profiler
 profile = lambda f: f
-
+# '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
+# as few lines as possible each time line_profiler is run a lambda is used
+# Comment when debugging with line profiler
 """
 This is an implementation of Linear Regression with SGD solver aiming at performance when training
 examples matrix is a sparse matrix

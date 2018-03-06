@@ -1,5 +1,3 @@
-import os
-
 import sklearn.model_selection
 from scipy.io import savemat
 from scipy.stats import randint
@@ -9,42 +7,10 @@ from MlcClassifierChains import MlcClassifierChains
 from MlcScore import score_accuracy
 from helpers import *
 
-# Comment when debuging with line profiler
 profile = lambda none: none
-
-
-def load_delicious():
-    DATASET_FILENAME = 'delicious_data.txt'
-    DATASET_TRAIN_SET_FILENAME = "delicious_trSplit.txt"
-    DATASET_TEST_SET_FILENAME = "delicious_tstSplit.txt"
-
-    DATASET_FILENAME = os.path.join('data', DATASET_FILENAME)
-    DATASET_TRAIN_SET_FILENAME = os.path.join('data', DATASET_TRAIN_SET_FILENAME)
-    DATASET_TEST_SET_FILENAME = os.path.join('data', DATASET_TEST_SET_FILENAME)
-
-    X, y = load_mlc_dataset(DATASET_FILENAME,
-                            header=True,
-                            concatbias=True)
-    f1 = open(DATASET_TRAIN_SET_FILENAME)
-    train_ind = np.loadtxt(fname=f1, delimiter=" ", dtype=int)
-    f1.close()
-
-    f2 = open(DATASET_TEST_SET_FILENAME)
-    test_ind = np.loadtxt(fname=f2, delimiter=" ", dtype=int)
-    f2.close()
-
-    # Normalize train and test indexes
-    train_ind = train_ind - 1
-    test_ind = test_ind - 1
-
-    X_train = X[train_ind[:, 0]]
-    X_test = X[test_ind[:, 0]]
-
-    y_train = y[train_ind[:, 0]]
-    y_test = y[test_ind[:, 0]]
-
-    return X_train, y_train, X_test, y_test
-
+# '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
+# as few lines as possible each time line_profiler is run a lambda is used
+# Comment when debugging with line profiler
 
 ti = tic()
 

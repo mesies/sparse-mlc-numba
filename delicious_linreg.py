@@ -1,8 +1,9 @@
-import numpy as np
-from helpers import load_mlc_dataset, tic, toc
-from MlcLinReg import MlcLinReg
-from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.metrics import accuracy_score
+
+from MlcLinReg import MlcLinReg
+from helpers import load_mlc_dataset, tic, toc
 
 ti = tic()
 DATASET_FILENAME = "data\delicious_data.txt"
@@ -15,12 +16,10 @@ DEBUG_DATASET_SIZE = 50
 
 # 1. Load dataset
 #   1.1 Load data from delicious dataset, also use sklearn's sparse data structures.
-X, y, header_info = load_mlc_dataset(DATASET_FILENAME,
-                                     header=True,
-                                     concatbias=True)
-DATASET_SIZE = int(header_info[0])
-FEATURE_NUMBER = int(header_info[1])
-LABEL_NUMBER = int(header_info[2])
+X, y = load_mlc_dataset(DATASET_FILENAME,
+                        header=True,
+                        concatbias=True)
+
 
 #   1.2 Split into train/test sets according to delicious_trSplit.txt and delicious_tstSplit.txt, both files
 #       contain indexes.
@@ -58,12 +57,9 @@ y_test = y_test[:, 0]
 #   2.2 Code Stochastic Gradient Descent with regards to dataset sparsity
 #
 # Notes : Code it like sklearn classifiers
-mlc = MlcLinReg(learning_rate=0.01,
+mlc = MlcLinReg(learning_rate=0.09,
                 iterations=1000,
-                batch_size=256,
-                grad_check=True,
-                sparse=True,
-                verbose=True,
+                batch_size=5,
                 velocity=0.9)
 mlc.fit(X_train, y_train)
 y_pred = mlc.predict(X_test)

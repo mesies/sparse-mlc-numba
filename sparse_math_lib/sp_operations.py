@@ -2,19 +2,16 @@ import numba
 import numpy as np
 from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
 
+"""
+This file implements low-level functions written utilising the numba framework
+,in order to improve speed when input is sparse.
+"""
 
 @numba.jit('void(float64[:,:], float64[:], int32[:], int32[:], int64)',
            nopython=True
            )
 def mult_row_sparse_numba(result, matrix, result_row, result_col, lenrow):
-    # result init zero
 
-    # print numba.typeof(result)
-    # print numba.typeof(B)
-    # print numba.typeof(resultrow)
-    # print numba.typeof(resultcol)
-    # print numba.typeof(lenrow)
-    # print numba.typeof(lencol)
     for i in xrange(0, lenrow):
         row = np.take(result_row, i)
         col = np.take(result_col, i)
@@ -81,7 +78,11 @@ def nonzero_numba(result_row, result_col, indices, indptr, columns, iscsr):
            nogil=True)
 def sum_rows_of_matrix_numba(x, result, dim0, dim1):
     """
-    Numba function which returns sum of eaxh row e.g. [1 2 3] -> 6 [1 1],[2 2],[3 3] -> [2], [4], [6]
+    Numba function which returns sum of eaxh row
+     e.g. [1 2 3] -> 6
+     [1 1]    2
+     [2 2] -> 4
+     [3 3]    6
     :param x:
     :param result:
     :param dim0:
@@ -114,6 +115,13 @@ def sum_of_vector_numba(result, x, sh):
 
 
 def mult_row_raw(x, row_vector):
+    """
+    Has same function as mult_raw but returns rather than a coo_matrix
+    , returns its components in order to improve speed
+    :param x:
+    :param row_vector:
+    :return:
+    """
     result_data = x.data.copy()
     result_row = np.zeros(x.data.shape[0], dtype=int)
     result_col = np.zeros(x.data.shape[0], dtype=int)
@@ -127,14 +135,22 @@ def mult_row_raw(x, row_vector):
                           x.shape[0],
                           x.shape[1])
 
-    # We must return coo
-    # result = csr_matrix((result_data, x.indices, x.indptr), shape=x.shape)
-    # assert result.shape == x.shape
-
     return result_data, result_row, result_col
 
 
 def mult_row(x, row_vector):
+    """
+    Multiplies each column of matrix x ,element wise , by a column vector.
+    e.g.
+    1 2 3       1       1 2 3
+    1 2 3   x   2  ->   2 4 6
+    1 2 3       3       3 6 9
+    1 2 3       4       4 8 12
+
+    :param x:
+    :param row_vector:
+    :return:
+    """
     result_data = x.data.copy()
     result_row = np.zeros(x.data.shape[0], dtype=int)
     result_col = np.zeros(x.data.shape[0], dtype=int)
@@ -159,24 +175,17 @@ def mult_row(x, row_vector):
            nopython=True,
            nogil=True
            )
-def mult_row_matrix_numba(row_vector,
-                          x_indptr,
-                          x_indices,
-                          result_data,
-                          result_row,
-                          result_col,
-                          dim0,
-                          dim1):
-    # i -> row
+def mult_row_matrix_numba(row_vector, x_indptr, x_indices, result_data, result_row, result_col, dim0, dim1):
     h = 0
 
     for i in range(0, dim0):
         result_data[x_indptr[i]:x_indptr[i + 1]] *= row_vector[i]
         col_ind = x_indices[x_indptr[i]:x_indptr[i + 1]]
         for k in col_ind:
-            result_col[h] = (k)
-            result_row[h] = (i)
+            result_col[h] = k
+            result_row[h] = i
             h += 1
+
 
 @numba.jit('void(float64[:], float64[:,:], float64[:,:], int64, int64)',
            nopython=True,
@@ -197,9 +206,6 @@ def mult_col_matrix_numba(column_vector, matrix, result, dim0, dim1):
             result[i, j] = column_vector[i] * matrix[i, j]
 
 
-
-
-
 def mult_col(x, col_vector):
     if x.shape[0] == 1:
         x_newsize = np.reshape(x, (x.shape[1]))
@@ -211,11 +217,31 @@ def mult_col(x, col_vector):
 
 
 def col_row_sum_raw(data, row, col, shape0, shape1):
-    result = np.zeros((shape1))
+    """
+    Has same function as coo_row_sum but its input is, instead of
+    a single coo_matrix, its components.
+    :param data:
+    :param row:
+    :param col:
+    :param shape0:
+    :param shape1:
+    :return:
+    """
+    result = np.zeros(shape1)
     col_row_sum_numba(result, data, row, col, shape0, shape1, data.shape[0])
     return np.reshape(result, (1, result.shape[0]))
 
+
 def coo_row_sum(A):
+    """
+    Function which returns sum of eaxh row,
+     e.g. [1 2 3] -> 6
+     [1 1]    2
+     [2 2] -> 4
+     [3 3]    6
+    :param A:
+    :return:
+    """
     if not isinstance(A, coo_matrix):
         raise NotImplementedError
     result = np.zeros((A.shape[1]))

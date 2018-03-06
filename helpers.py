@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 
 import matplotlib.pyplot as plt
@@ -439,3 +440,36 @@ def concatenate_csr_matrices_by_columns(matrix1, matrix2):
              new_indices,
              new_ind_ptr)
         ).T.asformat('csc')
+
+
+def load_delicious():
+    DATASET_FILENAME = 'delicious_data.txt'
+    DATASET_TRAIN_SET_FILENAME = "delicious_trSplit.txt"
+    DATASET_TEST_SET_FILENAME = "delicious_tstSplit.txt"
+
+    DATASET_FILENAME = os.path.join('data', DATASET_FILENAME)
+    DATASET_TRAIN_SET_FILENAME = os.path.join('data', DATASET_TRAIN_SET_FILENAME)
+    DATASET_TEST_SET_FILENAME = os.path.join('data', DATASET_TEST_SET_FILENAME)
+
+    X, y = load_mlc_dataset(DATASET_FILENAME,
+                            header=True,
+                            concatbias=True)
+    f1 = open(DATASET_TRAIN_SET_FILENAME)
+    train_ind = np.loadtxt(fname=f1, delimiter=" ", dtype=int)
+    f1.close()
+
+    f2 = open(DATASET_TEST_SET_FILENAME)
+    test_ind = np.loadtxt(fname=f2, delimiter=" ", dtype=int)
+    f2.close()
+
+    # Normalize train and test indexes
+    train_ind = train_ind - 1
+    test_ind = test_ind - 1
+
+    X_train = X[train_ind[:, 0]]
+    X_test = X[test_ind[:, 0]]
+
+    y_train = y[train_ind[:, 0]]
+    y_test = y[test_ind[:, 0]]
+
+    return X_train, y_train, X_test, y_test

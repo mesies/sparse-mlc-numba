@@ -9,6 +9,10 @@ This file implements the gradient.
 profile = lambda f: f
 
 
+# '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
+# as few lines as possible each time line_profiler is run a lambda is used
+# Comment when debugging with line profiler
+
 @profile
 def gradient_sp(X, W, y):
     """
@@ -21,7 +25,6 @@ def gradient_sp(X, W, y):
     # sigm(XW) - y
     sdotp = sigmoid(X.dot(W))
 
-    # ############################################Doable
     if y.nnz != 0:
         # Originally it is required to compute
         #             s = -1 ^ (1 - y_n)
@@ -31,19 +34,9 @@ def gradient_sp(X, W, y):
         # Because y[ind] = 1, if ind = y.nonzero()
         resultrow, resultcol = nonzero(y)
         sdotp[resultrow] -= 1
-    # #############################################
-    # # (sigm(XW) - y) * X,T
 
-    # in_sum = X.multiply(sdotp)
-    ######in_sum = mult_row(X, sdotp)
+    # (sigm(XW) - y) * X,T
     data, row, col = mult_row_raw(X, sdotp)
-    ############################################Doable
-    # result = np.zeros(X.shape[1], dtype=float)
-    # sum_rows_of_matrix_numba(in_sum, result, in_sum.shape[0], in_sum.shape[1])
-    # result = np.sum(in_sum, axis=0).A
-    # result = (in_sum).sum(axis=0).A # Best
-
-    ####result = coo_row_sum(in_sum)
     result = col_row_sum_raw(data, row, col, X.shape[0], X.shape[1])
     # assert result.shape == W_1dim.shape
 
