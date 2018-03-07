@@ -292,7 +292,7 @@ def generate_load_cache(filename, X_train, y_train, batch_size):
     return cache
 
 
-def shuffle_dataset(X, y, copy=True):
+def shuffle_dataset(X, y, copy=False):
     """
     Shuffles X and y
     :param X:
@@ -317,6 +317,9 @@ def shuffle_dataset(X, y, copy=True):
 
 
 def batch_iter(y, X, batch_size, shuffle=False):
+    if shuffle:
+        y, X = shuffle_dataset(y, X)
+
     for i in np.arange(0, X.shape[0], int(batch_size)):
         limit = (i + batch_size)
         if limit > X.shape[0]:

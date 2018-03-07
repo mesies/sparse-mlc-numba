@@ -11,8 +11,6 @@ from MlcLinReg import MlcLinReg
 from helpers import shuffle_dataset
 
 profile = lambda f: f
-
-
 # '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
 # as few lines as possible each time line_profiler is run a lambda is used
 # Comment when debugging with line profiler
@@ -25,7 +23,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
                  verbose=False,
                  grad_check=False,
                  batch_size=300,
-                 alpha=0.5,
+                 alpha=0.99,
                  velocity=1,
                  cache=None):
 

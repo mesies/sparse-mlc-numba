@@ -1,13 +1,13 @@
 import logging
 
 import numpy as np
+from sklearn.utils import shuffle
 
 import helpers
 import sparse_math_lib.gradient
 import sparse_math_lib.logloss
 from sparse_math_lib import mathutil
 
-# Comment when debugging with line profiler
 profile = lambda f: f
 # '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
 # as few lines as possible each time line_profiler is run a lambda is used
@@ -28,7 +28,7 @@ class MlcLinReg:
                  batch_size=256,
                  alpha=0.9,
                  velocity=1,
-                 cache=None):
+                 regularization=0.01):
 
         self.batch_size = batch_size
         self.verbose = verbose
@@ -37,10 +37,10 @@ class MlcLinReg:
         self.iterations = iterations
         self.w = {}
         self.sparse = sparse
-        self.lossHistory = []
+        self.lossHistory = np.zeros(iterations)
         self.alpha = alpha
         self.velocity = velocity
-        self.cache = cache
+        self.l_one = regularization
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
         else:
@@ -83,31 +83,34 @@ class MlcLinReg:
         epoch_loss = []
         # learning rate e, momentum parameter a,
 
-        # if self.cache is None:
-        #     gen = self.batch_iter(y, X, batch_size)
-        # else:
-        #     gen = self.cache
+        y, X = shuffle(y, X)
 
-        batches = list(self.batch_iter(y, X, batch_size))
+        batches = list(self.batch_iter(y, X, batch_size, True))
         W = self.w
-        L = self.learning_rate
-        velocity = self.velocity
-        alpha = self.alpha
+        l_one = self.l_one
+        L = np.array(self.learning_rate)
+        velocity = np.array(self.velocity)
+        alpha = np.array(self.alpha)
+
+        old_loss_ep = np.inf
 
         for epoch in range(0, epochs):
-            old_loss = np.inf
 
+            old_loss = np.inf
             grads = []
             epoch_loss = []
             shuffle_indices = np.random.permutation(np.arange(len(batches)))
 
             for batch_ind in shuffle_indices:
                 (sampleX, sampley) = batches[batch_ind]
-                # sampleX, sampley = shuffle(sampleX, sampley)
-                loss = sparse_math_lib.logloss.log_likelihood_sp(X=sampleX, y=sampley, W=W)
-                gradient = sparse_math_lib.gradient.gradient_sp(X=sampleX, W=W, y=sampley)
+                # sampleX, sampley = helpers.shuffle_dataset(sampleX, sampley)
 
+                loss = sparse_math_lib.logloss.log_likelihood_sp(X=sampleX, y=sampley, W=W) + (
+                            l_one * np.sum(np.abs(W)))
                 epoch_loss.append(loss)
+                av = alpha * velocity
+                gradient = sparse_math_lib.gradient.gradient_sp(X=sampleX, W=(W + (av)), y=sampley) + (
+                            l_one * np.sign(W))
                 grads.append(gradient)
 
                 if np.abs(loss - old_loss) < tolerance:
@@ -115,29 +118,33 @@ class MlcLinReg:
                 old_loss = loss
 
                 # Nesterov momentum
-                velocity = (alpha * velocity) + (L * gradient)
+                velocity = (av) - (L * gradient)
                 assert velocity.shape == self.w.shape
 
-                W = W - velocity
-
-                # W = W - (L * gradient)
+                W = W + velocity
 
             assert self.w.shape == W.shape
             self.w = W
-            self.lossHistory.append(np.average(epoch_loss))
+            new_loss = np.average(epoch_loss)
+            self.lossHistory[epoch] = new_loss
             # print("Ending epoch {}, average loss -> {} Epoch gradient AVG -> {}".format(
             #       epoch,
             #       np.average(epoch_loss),
             #       np.average(grads)))
-            # if(np.average(epoch_loss) > old_loss_ep):
-            #     break
-            # old_loss = np.average(epoch_loss)
+
+            # Maybe needs tweaking
+            limit = (((float(epochs) - (epoch ** 3)) ** 3) / (epochs))
+            if limit < 0:
+                limit = 1e-2
+            if (new_loss - old_loss_ep) > limit:
+                break
+            old_loss_ep = np.average(epoch_loss)
 
         return self.w
 
     # In helpers remove dependency
-    def batch_iter(self, y, tx, batch_size, num_batches=1, shuffle=False):
-        return helpers.batch_iter(y, tx, batch_size)
+    def batch_iter(self, y, tx, batch_size, shuffle=False):
+        return helpers.batch_iter(y, tx, batch_size, shuffle)
 
     def predict(self, X):
         logging.info("Predicting Labels")

@@ -20,29 +20,53 @@ clf = SGDClassifier(loss='log', max_iter=1000, tol=1e-3, verbose=0)
 # N = np.array(range(100, 1000, 10))
 # N = np.array([50, 100, 200, 300, 400, 600])
 # N = np.array([0.001, 0.005, 0.025, 0.05, 0.1])
-N = np.array([400])
+N = np.array([500, 1000, 1500, 2000, 2500])
 scores = list()
 scores_sgd = list()
 times = list()
 times_sgd = list()
-feature = 17
-batch_size = 200
+feature = 1
+batch_size = 2048
+iterations = 600
 
 for n in N:
     t = tic()
-    mlc = MlcLinReg(learning_rate=0.01, iterations=n, batch_size=batch_size, verbose=False, sparse=True)
-    mlc.fit(X_train, y_train_f[:, feature])
-    y_pred = mlc.predict(X_test)
+    mlc1 = MlcLinReg(learning_rate=0.2, iterations=iterations, batch_size=n, verbose=False, sparse=True,
+                     regularization=0.5)
+    mlc1.fit(X_train, y_train_f[:, feature])
+    y_pred = mlc1.predict(X_test)
     times.append(toc(t))
     scores.append(f1_score(y_pred=y_pred, y_true=y_test_f[:, feature].toarray()))
 
     t = tic()
-    clf = SGDClassifier(loss='log', max_iter=200, tol=1e-3, verbose=0, shuffle=True)
-    # clf = RandomForestClassifier(n_estimators=200)
-    clf.fit(X_train.toarray(), y_train_f[:, feature].toarray().ravel())
-    y_pred2 = clf.predict(X_test.toarray())
-    scores_sgd.append(f1_score(y_pred=y_pred2, y_true=y_test_f[:, feature].toarray()))
+    mlc = MlcLinReg(learning_rate=0.2, iterations=iterations, batch_size=n, verbose=False, sparse=True,
+                    regularization=0)
+    mlc.fit(X_train, y_train_f[:, feature])
+    y_pred = mlc.predict(X_test)
     times_sgd.append(toc(t))
+    scores_sgd.append(f1_score(y_pred=y_pred, y_true=y_test_f[:, feature].toarray()))
+
+    # t = tic()
+    # clf = SGDClassifier(loss='log', max_iter=n, tol=1e-3, verbose=0, shuffle=True, penalty="l1")
+    # #clf = RandomForestClassifier(n_estimators=200)
+    # clf.fit(X_train.toarray(), y_train_f[:, feature].toarray().ravel())
+    # y_pred2 = clf.predict(X_test.toarray())
+    # scores_sgd.append(f1_score(y_pred=y_pred2, y_true=y_test_f[:, feature].toarray()))
+    # times_sgd.append(toc(t))
+
+fig = plt.figure()
+plt.plot(np.arange(0, len(mlc1.lossHistory)), mlc1.lossHistory)
+fig.suptitle("Training Loss")
+plt.xlabel("Epoch #")
+plt.ylabel("Loss")
+plt.show()
+
+print scores
+print times
+plt.plot(N, scores, label="Minibatch " + "batch size " + str(batch_size))
+plt.plot(N, scores_sgd, label="sklearn SGD")
+plt.legend()
+plt.show()
 
 fig = plt.figure()
 plt.plot(np.arange(0, len(mlc.lossHistory)), mlc.lossHistory)
@@ -50,8 +74,3 @@ fig.suptitle("Training Loss")
 plt.xlabel("Epoch #")
 plt.ylabel("Loss")
 plt.show()
-
-# plt.plot(N, times, label="Minibatch " + "batch size " + str(batch_size))
-# plt.plot(N, times_sgd, label="sklearn SGD")
-# plt.legend()
-# plt.show()

@@ -6,11 +6,11 @@ ti = tic()
 # DATASET_TRAIN_SET_FILENAME = "data\\deliciousLarge_train.txt"
 # DATASET_TEST_SET_FILENAME = "data\\deliciousLarge_test.txt"
 
-DATASET_TRAIN_SET_FILENAME = "data\\rcv1x_train.txt"
-DATASET_TEST_SET_FILENAME = "data\\rcv1x_test.txt"
+# DATASET_TRAIN_SET_FILENAME = "data\\rcv1x_train.txt"
+# DATASET_TEST_SET_FILENAME = "data\\rcv1x_test.txt"
 
-# DATASET_TRAIN_SET_FILENAME = "data\\eurlex_train.txt"
-# DATASET_TEST_SET_FILENAME = "data\\eurlex_test.txt"
+DATASET_TRAIN_SET_FILENAME = "data\\eurlex_train.txt"
+DATASET_TEST_SET_FILENAME = "data\\eurlex_test.txt"
 
 # DATASET_TRAIN_SET_FILENAME = "data\\amazonCat_train.txt"
 # DATASET_TEST_SET_FILENAME = "data\\amazonCat_test.txt"
