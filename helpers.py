@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.sparse as sp
+import sklearn
 from sklearn.datasets import load_svmlight_file
-from sklearn.model_selection import learning_curve
+from sklearn.model_selection import learning_curve, ShuffleSplit
 
 from sparse_math_lib.gradient import gradient_sp
 from sparse_math_lib.logloss import log_likelihood_sp, log_likelihood
@@ -23,10 +24,10 @@ This file contains helper functions
 def split_train_test(X, y, train_ratio=0.8):
     """
     Splits X, y into a train and a test set. Returns X_train, y_train, X_test, y_test
-    :param X:
-    :param y:
-    :param train_ratio:
-    :return:
+    @param X
+    @param y
+    @param train_ratio
+    @return Split dataset
     """
     training_size = X.shape[0]
     indices = list(range(training_size))
@@ -55,14 +56,14 @@ def load_mlc_dataset(
     are parsed correctly
 
     Args:
-        :param filename: Path of the dataset.
-        :param header: True if file has a header.
-        :param concatbias: Whether to add bias.
+        @param filename: Path of the dataset.
+        @param header: True if file has a header.
+        @param concatbias: Whether to add bias.
 
     Returns:
-        :returns X_train: csr_matrix(TODO check) which contains the features of each point.
-        :returns y_train: csr_matrix(TODO check) which contains the labels of each point.
-        :returns header_info: False if there is no header, contains an array which contains
+        @returns X_train: csr_matrix(TODO check) which contains the features of each point.
+        @returns y_train: csr_matrix(TODO check) which contains the labels of each point.
+        @returns header_info: False if there is no header, contains an array which contains
                     0: Number of training examples
                     1: Feature Dimensionality
                     2: Label Dimensionality
@@ -110,9 +111,10 @@ def load_mlc_dataset(
 def grad_check(X, W, y):
     """
     Checks the validation of gradient versus a numerical approximation
-    :param X: Training examples
-    :param W: Weight vector
-    :param y: True Categories of the training examples X
+    @param X: Training examples
+    @param W: Weight vector
+    @param y: True Categories of the training examples X
+    @return Maximum absolute error of calculated gradient
     """
     if scipy.sparse.issparse(X):
         calc_gradient = gradient_sp(X=X, W=W, y=y)
@@ -171,7 +173,7 @@ def plot_linreg_results(X, W, y, preds, lossHistory):
     plt.show()
 
 
-def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
+def plot_learning_curve(estimator, title, X, y, ylim=None, cv=ShuffleSplit(n_splits=20, test_size=0.1),
                         n_jobs=1, train_sizes=np.linspace(.1, 1.0, 5)):
     """
     Generate a simple plot of the test and training learning curve.
@@ -249,10 +251,12 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
              label="Cross-validation score")
 
     plt.legend(loc="best")
+    plt.show()
     return plt
 
 
-def report(results, n_top=3):
+def report(results, n_top=3, duplicates=False):
+    t = 0
     for i in range(1, n_top + 1):
         candidates = np.flatnonzero(results['rank_test_score'] == i)
         for candidate in candidates:
@@ -262,16 +266,27 @@ def report(results, n_top=3):
                 results['std_test_score'][candidate]))
             print("Parameters: {0}".format(results['params'][candidate]))
             print("")
+            t += 1
+            if t == n_top and not duplicates:
+                break
+
+
+def report_params(results, n_top=3, duplicates=False):
+    t = 0
+    for i in range(1, n_top + 1):
+        candidates = np.flatnonzero(results['rank_test_score'] == i)
+        for candidate in candidates:
+            return (results['params'][candidate])
 
 
 def generate_load_cache(filename, X_train, y_train, batch_size):
     """
     Split X_train, y_train, in batches and save them.
-    :param filename
-    :param X_train:
-    :param y_train:
-    :param batch_size:
-    :return:
+    @param filename
+    @param X_train:
+    @param y_train:
+    @param batch_size:
+    @return:
     """
     try:
         cache = np.load(filename + "_batches.npz")['a']
@@ -295,10 +310,10 @@ def generate_load_cache(filename, X_train, y_train, batch_size):
 def shuffle_dataset(X, y, copy=False):
     """
     Shuffles X and y
-    :param X:
-    :param y:
-    :param copy:
-    :return:
+    @param X:
+    @param y:
+    @param copy:
+    @return:
     """
     data_size = y.shape[0]
 
@@ -347,8 +362,8 @@ def batch_iter_linreg_test(y, X, batch_size, shuffle=False):
 def size(x, str1=' '):
     """
     Prints shape of x along with a message.
-    :param x:
-    :param str1: A message to print with the shape.
+    @param x:
+    @param str1: A message to print with the shape.
     """
     print(str(x.shape) + ' ' + str1)
     return 0
@@ -361,21 +376,22 @@ def tic():
     return time.time()
 
 
-def toc(start_time, str1=" "):
+def toc(start_time, str1=" ", print_res=True):
     """
     MATLAB's toc.
-    :param start_time: Time supplied by tic
-    :param str1: Extra string to be included in the beginning of print statement
+    @param start_time: Time supplied by tic
+    @param str1: Extra string to be included in the beginning of print statement
     """
-    print(str1 + " " + "--- %s seconds ---" % (time.time() - start_time))
+    if print_res:
+        print(str1 + " " + "--- %s seconds ---" % (time.time() - start_time))
     return time.time() - start_time
 
 
 def typu(x):
     """
     Print type of object.
-    :param x:
-    :return:
+    @param x:
+    @return:
     """
     print(type(x))
 
@@ -383,9 +399,9 @@ def typu(x):
 def save_sparse_csr(filename, array):
     """
     Saves a sparse array in npz format in current directory.
-    :param filename:
-    :param array:
-    :return:
+    @param filename:
+    @param array:
+    @return:
     """
     np.savez(filename, data=array.data, indices=array.indices,
              indptr=array.indptr, shape=array.shape)
@@ -394,8 +410,8 @@ def save_sparse_csr(filename, array):
 def load_sparse_csr(filename):
     """
     Loads a sparse array from an npz file in current directory.
-    :param filename:
-    :return:
+    @param filename:
+    @return:
     """
     loader = np.load(filename)
     return sp.csr_matrix((loader['data'], loader['indices'], loader['indptr']),
@@ -407,9 +423,9 @@ def load_sparse_csr(filename):
 def concatenate_csr_matrices_by_columns(matrix1, matrix2):
     """
     Concatenates two csr sparse matrices in a more efficient way than hstack
-    :param matrix1:
-    :param matrix2:
-    :return:
+    @param matrix1:
+    @param matrix2:
+    @return:
     """
     csr = isinstance(matrix1, scipy.sparse.csr_matrix)
     if isinstance(matrix2, np.ndarray):
@@ -445,7 +461,12 @@ def concatenate_csr_matrices_by_columns(matrix1, matrix2):
         ).T.asformat('csc')
 
 
-def load_delicious():
+def load_delicious(feature=None):
+    """
+    This function loads delicious dataset with 16105 training examples and 500 features.
+    @param feature: number of label to return if it is not set return all labels
+    @return:
+    """
     DATASET_FILENAME = 'delicious_data.txt'
     DATASET_TRAIN_SET_FILENAME = "delicious_trSplit.txt"
     DATASET_TEST_SET_FILENAME = "delicious_tstSplit.txt"
@@ -475,4 +496,22 @@ def load_delicious():
     y_train = y[train_ind[:, 0]]
     y_test = y[test_ind[:, 0]]
 
+    if feature is not None:
+        return X_train, y_train[:, feature], X_test, y_test[:, feature]
+
     return X_train, y_train, X_test, y_test
+
+
+def load_breast_cancer(split=True, train_test_ratio=0.8):
+    """
+    This function returns the sklearn toy breast cancer dataset.
+    @param split:
+    @param train_test_ratio:
+    @return:
+    """
+    (X, y) = sklearn.load_breast_cancer(True)
+    X = sklearn.preprocessing.normalize(X)
+    X_train, y_train, X_test, y_test = split_train_test(X, y, train_test_ratio)
+    if split:
+        return X_train, y_train, X_test, y_test
+    return X, y

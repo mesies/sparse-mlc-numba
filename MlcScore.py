@@ -4,13 +4,11 @@ from scipy import logical_and, logical_or
 
 def score_accuracy(y_predicted, y_real):
     """
-                (   y_real AND y_predicted  )
-     score =    (  ------------------------ )
-                (   y_real OR y_predicted   )
+     score = (y_real AND y_predicted)/(y_real OR y_predicted)
 
-    :param y_predicted:
-    :param y_real:
-    :return:
+    @param y_predicted:
+    @param y_real:
+    @return: score
     """
 
     if isinstance(y_predicted, np.ndarray):

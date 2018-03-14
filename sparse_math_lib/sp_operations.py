@@ -21,8 +21,8 @@ def mult_row_sparse_numba(result, matrix, result_row, result_col, lenrow):
 def nonzero(x):
     """
     Returns indices of non zero elements of a scipy csr_matrix, wrapper for nonzero_numb.
-    :param x: The sparse matrix in question only csr and csc matrices are supported
-    :return: row indices and column indices
+    @param x: The sparse matrix in question only csr and csc matrices are supported
+    @return: row indices and column indices
     """
 
     indrow = np.zeros((x.data.shape[0]), dtype=int)
@@ -45,13 +45,13 @@ def nonzero(x):
 def nonzero_numba(result_row, result_col, indices, indptr, columns, iscsr):
     """
     See nonzero
-    :param result_row:
-    :param result_col:
-    :param indices:
-    :param indptr:
-    :param columns:
-    :param iscsr:
-    :return:
+    @param result_row:
+    @param result_col:
+    @param indices:
+    @param indptr:
+    @param columns:
+    @param iscsr:
+    @return:
     """
     # column indices for column i is in indices[indptr[i]:indptr[i+1]]
     if iscsr == 1:
@@ -83,11 +83,11 @@ def sum_rows_of_matrix_numba(x, result, dim0, dim1):
      [1 1]    2
      [2 2] -> 4
      [3 3]    6
-    :param x:
-    :param result:
-    :param dim0:
-    :param dim1:
-    :return:
+    @param x:
+    @param result:
+    @param dim0:
+    @param dim1:
+    @return:
     """
     for i in range(0, dim0):
         for j in range(0, dim1):
@@ -102,10 +102,10 @@ def sum_rows_of_matrix_numba(x, result, dim0, dim1):
 def sum_of_vector_numba(result, x, sh):
     """
     An optimised summation using Numba's JIT compiler
-    :param result:
-    :param x:
-    :param sh:
-    :return:
+    @param result:
+    @param x:
+    @param sh:
+    @return:
     """
     s = x[0]
     for i in range(1, sh):
@@ -118,9 +118,9 @@ def mult_row_raw(x, row_vector):
     """
     Has same function as mult_raw but returns rather than a coo_matrix
     , returns its components in order to improve speed
-    :param x:
-    :param row_vector:
-    :return:
+    @param x:
+    @param row_vector:
+    @return:
     """
     result_data = x.data.copy()
     result_row = np.zeros(x.data.shape[0], dtype=int)
@@ -147,9 +147,9 @@ def mult_row(x, row_vector):
     1 2 3       3       3 6 9
     1 2 3       4       4 8 12
 
-    :param x:
-    :param row_vector:
-    :return:
+    @param x:
+    @param row_vector:
+    @return:
     """
     result_data = x.data.copy()
     result_row = np.zeros(x.data.shape[0], dtype=int)
@@ -194,12 +194,12 @@ def mult_row_matrix_numba(row_vector, x_indptr, x_indices, result_data, result_r
 def mult_col_matrix_numba(column_vector, matrix, result, dim0, dim1):
     """
     Optimised matrix element-wise multiplication when one matrix
-    :param column_vector:
-    :param matrix:
-    :param result:
-    :param dim0:
-    :param dim1:
-    :return:
+    @param column_vector:
+    @param matrix:
+    @param result:
+    @param dim0:
+    @param dim1:
+    @return:
     """
     for i in range(0, dim0):
         for j in range(0, dim1):
@@ -220,12 +220,12 @@ def col_row_sum_raw(data, row, col, shape0, shape1):
     """
     Has same function as coo_row_sum but its input is, instead of
     a single coo_matrix, its components.
-    :param data:
-    :param row:
-    :param col:
-    :param shape0:
-    :param shape1:
-    :return:
+    @param data:
+    @param row:
+    @param col:
+    @param shape0:
+    @param shape1:
+    @return:
     """
     result = np.zeros(shape1)
     col_row_sum_numba(result, data, row, col, shape0, shape1, data.shape[0])
@@ -239,8 +239,8 @@ def coo_row_sum(A):
      [1 1]    2
      [2 2] -> 4
      [3 3]    6
-    :param A:
-    :return:
+    @param A:
+    @return:
     """
     if not isinstance(A, coo_matrix):
         raise NotImplementedError

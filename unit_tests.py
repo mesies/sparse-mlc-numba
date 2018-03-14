@@ -12,7 +12,6 @@ Unit tests for critical parts of the classifier.
 
 class MyTestCase(unittest.TestCase):
 
-
     def test_sum_rows(self):
         """
         Test mathutil.sum_rows
@@ -63,7 +62,7 @@ class MyTestCase(unittest.TestCase):
     def test_cc_score(self):
         """
         Test MlcScore.score_accuracy
-        :return:
+         
         """
         import scipy.sparse as sp
         from MlcScore import score_accuracy
@@ -105,7 +104,7 @@ class MyTestCase(unittest.TestCase):
     def test_non_zero_csc(self):
         """
         Tests nonzero when matrix is CSC
-        :return:
+         
         """
         import scipy.sparse as sp
 
@@ -124,7 +123,7 @@ class MyTestCase(unittest.TestCase):
     def test_non_zero_csr(self):
         """
         Tests implementation of nonzero when matrix is CSR
-        :return:
+         
         """
         import scipy.sparse as sp
 
@@ -143,7 +142,7 @@ class MyTestCase(unittest.TestCase):
     def test_gradient(self):
         """
         Validates the gradient using finite differences.
-        :return:
+         
         """
         import os
 
@@ -185,7 +184,7 @@ class MyTestCase(unittest.TestCase):
     def test_batch_iter(self):
         """
         Tests batching function
-        :return:
+         
         """
         from helpers import batch_iter
         import scipy.sparse as sp
@@ -211,7 +210,7 @@ class MyTestCase(unittest.TestCase):
     def test_sparse_mult(self):
         """
         Tests (Matrix X column vector) element-wise multiplication
-        :return:
+         
         """
         import scipy.sparse as sp
 
@@ -234,7 +233,7 @@ class MyTestCase(unittest.TestCase):
     def test_sparse_coo_sum(self):
         """
         Tests summation of columns when input matrix is COO.
-        :return:
+         
         """
         from sparse_math_lib.sp_operations import coo_row_sum
         import scipy.sparse as sp

@@ -19,10 +19,10 @@ profile = lambda f: f
 def log_likelihood_sp(X, W, y):
     """
     Log loss sparse optimised function.
-    :param X:
-    :param W:
-    :param y:
-    :return:
+    @param X:
+    @param W:
+    @param y:
+    @return:
     """
     # -1 ^ y
     signus = np.ones(y.shape)
@@ -70,10 +70,10 @@ def log_likelihood(X, W, y):
     L = -np.sum(-np.log(1 + np.exp(-((-1)**(1-t)) * np.dot(X, W))))
 
     This functions returns the log likelihood that will be maximized.
-    :param X: Training examples
-    :param W: Weight vector
-    :param y: True Categories of the training examples X
-    :return: minus log likelihood
+    @param X: Training examples
+    @param W: Weight vector
+    @param y: True Categories of the training examples X
+    @return: minus log likelihood
     """
     if scipy.sparse.issparse(X):
         """

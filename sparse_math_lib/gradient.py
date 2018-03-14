@@ -17,10 +17,10 @@ profile = lambda f: f
 def gradient_sp(X, W, y):
     """
        Gradient of log_likelihood optimised for sparse matrices.
-       :param X: Training examples
-       :param W: Weight vector
-       :param y: True Categories of the training examples X
-       :return: Gradient
+       @param X: Training examples
+       @param W: Weight vector
+       @param y: True Categories of the training examples X
+       @return: Gradient
        """
     # sigm(XW) - y
     sdotp = sigmoid(X.dot(W))
@@ -47,10 +47,10 @@ def gradient_sp(X, W, y):
 def gradient(X, W, y):
     """
            Gradient of log_likelihood
-           :param X: Training examples
-           :param W: Weight vector
-           :param y: True Categories of the training examples X
-           :return: Gradient
+           @param X: Training examples
+           @param W: Weight vector
+           @param y: True Categories of the training examples X
+           @return: Gradient
            """
     sig = (sigmoid(np.dot(X, W))).T - y
     assert sig.shape == y.shape

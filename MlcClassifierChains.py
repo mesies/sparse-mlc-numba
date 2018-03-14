@@ -15,6 +15,7 @@ profile = lambda f: f
 # as few lines as possible each time line_profiler is run a lambda is used
 # Comment when debugging with line profiler
 
+
 class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
     def __init__(self,
                  learning_rate=0.0499,
@@ -50,8 +51,8 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         Train with X.concat(y0), y1 -> keep weights in self.weights[1]
         ...
         Train with X.concat(y0,...,yn-1), yn -> keep weights in self.weights[n]
-        :param X_train: Features of training examples.
-        :param y_train: Labels of training examples
+        @param X_train: Features of training examples.
+        @param y_train: Labels of training examples
         """
         logging.info("***************************************************")
         logging.info("       Commencing Classifier Chain training")
@@ -68,7 +69,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
             learning_rate=self.learning_rate,
             batch_size=self.batch_size,
             iterations=self.iterations,
-            cache=self.cache)
+        )
         clf.fit(X, y)
 
         # Save the trained instance
@@ -108,8 +109,8 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
     def predict(self, X_test):
         """
         Predicts the labels of X_test
-        :param X_test:
-        :return:
+        @param X_test:
+        @return:
         """
         logging.info("***************************************************")
         logging.info("       Commencing Classifier Chain predicting")

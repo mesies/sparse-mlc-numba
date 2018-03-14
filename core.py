@@ -1,4 +1,8 @@
+from sklearn.linear_model import SGDClassifier
+from sklearn.metrics import f1_score
+
 from MlcClassifierChains import MlcClassifierChains
+from MlcLinReg import MlcLinReg
 from MlcScore import score_accuracy
 from helpers import load_mlc_dataset, tic, toc, save_sparse_csr, load_sparse_csr
 
@@ -47,14 +51,20 @@ except IOError:
     save_sparse_csr("ytest_big", y_test)
 
 print("Started Fitting")
-mlc = MlcClassifierChains(learning_rate=0.01,
-                          iterations=100,
-                          batch_size=100,
-                          alpha=0.99,
-                          velocity=1)
-mlc.fit(X_train, y_train)
+feature = 1
+mlc = MlcLinReg(learning_rate=0.08, iterations=600, batch_size=2048,
+                regularization=0.5)
+mlc.fit(X_train, y_train[:, feature])
 y_pred = mlc.predict(X_test)
-
-print(score_accuracy(y_pred, y_test))
+print "ADAM linreg"
+print(f1_score(y_pred=y_pred, y_true=y_test[:, feature].toarray()))
 
 toc(ti)
+t = tic()
+clf = SGDClassifier(loss='log', max_iter=600, tol=1e-3)
+# clf = RandomForestClassifier(n_estimators=200)
+clf.fit(X_train, y_train[:, feature].toarray().ravel())
+y_pred2 = clf.predict(X_test)
+print "sklearn SGD"
+print(f1_score(y_pred=y_pred2, y_true=y_test[:, feature].toarray()))
+toc(t)
