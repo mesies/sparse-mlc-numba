@@ -21,22 +21,16 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
                  learning_rate=0.0499,
                  iterations=1000,
                  sparse=True,
-                 verbose=False,
-                 grad_check=False,
+                 verbose=0,
                  batch_size=300,
-                 alpha=0.99,
-                 velocity=1,
-                 cache=None):
+                 parameter_pack=None):
 
         self.learning_rate = learning_rate
         self.iterations = iterations
         self.sparse = sparse
         self.verbose = verbose
-        self.grad_check = grad_check
         self.batch_size = batch_size
-        self.alpha = alpha
-        self.velocity = velocity
-        self.cache = cache
+        self.parameter_pack = parameter_pack
 
         self.trained = []
         self.classifier_type = MlcLinReg
@@ -47,10 +41,10 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
     @profile
     def fit(self, X_train, y_train):
         """
-        Train with X, y0 -> keep weights in self.weights[0]
-        Train with X.concat(y0), y1 -> keep weights in self.weights[1]
-        ...
-        Train with X.concat(y0,...,yn-1), yn -> keep weights in self.weights[n]
+        Train with X, y0 -> keep weights in self.weights[0] \n
+        Train with X, y1 -> keep weights in self.weights[1] \n
+        ...\n
+        Train with X, yn -> keep weights in self.weights[n]\n
         @param X_train: Features of training examples.
         @param y_train: Labels of training examples
         """
@@ -81,9 +75,10 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         self.label_dim = y_train.shape[1]
 
         _init = False
-
-        iterator = tqdm.trange(1, self.label_dim)
+        # if self.verbose > 0:
+        iterator = tqdm.tqdm(range(1, self.label_dim))
         # iterator = range(1, self.label_dim)
+
         for i in iterator:
             # Train Classifier i
             y = y_train[:, i]
@@ -126,8 +121,8 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         # Make prediction
         y = clf.predict(X)
         result = np.zeros((X_test.shape[0], self.label_dim))
+
         result[:, i] = y
-        y = y.reshape((y.shape[0], 1))
 
         # Concatenate result to X
         # X = sp.hstack([X, sp.csr_matrix(y)], format="csr")
@@ -142,8 +137,8 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
 
             # Make prediction
             y = clf.predict(X)
+
             result[:, i] = y
-            y = y.reshape((y.shape[0], 1))
 
             # Concatenate result to X
             # X = sp.hstack([X, sp.csr_matrix(y)], format="csr")

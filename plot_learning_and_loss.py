@@ -1,41 +1,34 @@
-import sys
-from time import time
-
-import matplotlib.pyplot as plt
 import numpy as np
-import scipy.sparse as sp
-import scipy.stats as st
-import sklearn
-from scipy.stats import randint as sp_randint
-from sklearn.linear_model import SGDClassifier
-from sklearn.metrics import f1_score
-from sklearn.model_selection import ShuffleSplit, KFold, RandomizedSearchCV
+from sklearn.model_selection import train_test_split
 
 import helpers
 from MlcLinReg import MlcLinReg
-from helpers import shuffle_dataset, split_train_test, tic, toc, load_delicious, plot_learning_curve
-
-stdout = sys.stdout
-# sys.stdout = open('delicious_random_grid_results.txt', 'w')
+from helpers import plot_learning_curve
 
 scores = list()
 scores_sgd = list()
 times = list()
 times_sgd = list()
-feature = 6
+feature = 2
 batch_size = 1024
 iterations = 200
 
-X_train, y_train, X_test, y_test = helpers.load_delicious(feature)
-plot_learning_curve(
-    estimator=MlcLinReg(learning_rate=0.005, iterations=100, batch_size=4),
-    title="Learning Curve",
-    X=(X_train).toarray(),
-    y=(y_train).toarray(),
-)
+X_train, y_train, X_test, y_test = helpers.load_delicious(1)
+X_train2, X_test2, y_train2, y_test2 = train_test_split(X_train.toarray(), y_train.toarray(), test_size=0.2,
+                                                        random_state=2)
 
-mlc1 = MlcLinReg(learning_rate=0.01, iterations=400, batch_size=2)
+plot_learning_curve(
+    estimator=MlcLinReg(learning_rate=0.2,
+                        iterations=1000,
+                        batch_size=512,
+                        l_one=0.15),
+    title="Learning Curve",
+    X=X_train2,
+    y=y_train2,
+    cv=5
+)
+np.set_printoptions(suppress=True)
+
+mlc1 = MlcLinReg(learning_rate=0.1, iterations=500, batch_size=500, l_one=0.2)
 mlc1.fit(X_train, y_train)
-y_pred = mlc1.predict(X_test)
 mlc1.plot_log_loss()
-print f1_score(y_pred=y_pred, y_true=y_test.toarray())

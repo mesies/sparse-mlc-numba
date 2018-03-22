@@ -6,6 +6,10 @@ from sklearn.metrics import f1_score
 from MlcLinReg import MlcLinReg
 from helpers import shuffle_dataset, split_train_test, tic, toc, load_delicious
 
+"""
+This script is used to compare performance of MlcLinReg and sklearn's SGDClassifier.
+"""
+
 # Load shuffle and split data
 X_train, y_train, X_test, y_test = load_delicious()
 X_train_s, y_train_s = shuffle_dataset(X_train, y_train)
@@ -31,7 +35,7 @@ iterations = 700
 
 for n in N:
     t = tic()
-    mlc1 = MlcLinReg(learning_rate=0.001, iterations=iterations, batch_size=n)
+    mlc1 = MlcLinReg(learning_rate=0.15, iterations=iterations, batch_size=n)
     mlc1.fit(X_train, y_train_f[:, feature])
     y_pred = mlc1.predict(X_test)
     times.append(toc(t))
@@ -52,7 +56,6 @@ for n in N:
     y_pred2 = clf.predict(X_test.toarray())
     scores_sgd.append(f1_score(y_pred=y_pred2, y_true=y_test_f[:, feature].toarray()))
     times_sgd.append(toc(t))
-
 
 
 print scores

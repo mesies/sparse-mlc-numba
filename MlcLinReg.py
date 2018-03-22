@@ -26,13 +26,11 @@ examples matrix is a sparse matrix
 
 class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
     def __init__(self,
-                 learning_rate=0.001,
-                 iterations=100,
+                 learning_rate=0.2,
+                 iterations=200,
                  verbose=False,
                  grad_check=False,
-                 batch_size=256,
-                 alpha=0.9,
-                 velocity=1,
+                 batch_size=512,
                  l_one=0.01):
 
         self.batch_size = batch_size
@@ -42,8 +40,6 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         self.iterations = iterations
         self.w = {}
         self.lossHistory = np.zeros(iterations)
-        self.alpha = alpha
-        self.velocity = velocity
         self.l_one = l_one
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
@@ -97,11 +93,14 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         W = self.w
         l_one = self.l_one
         L = np.array(self.learning_rate)
-        velocity = np.array(self.velocity)
-        alpha = np.array(self.alpha)
 
+        d = 1e-8
+        r1 = 0.9
+        r2 = 0.999
         old_loss_ep = np.inf
-
+        t = 0.
+        s = 0.
+        r = 0.
         for epoch in range(0, epochs):
 
             old_loss = np.inf
@@ -109,12 +108,6 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
             epoch_loss = []
             shuffle_indices = np.random.permutation(np.arange(len(batches)))
             # l_one = 0
-            t = 0.
-            s = 0.
-            r = 0.
-            d = 1e-8
-            r1 = 0.9
-            r2 = 0.999
 
             for batch_ind in shuffle_indices:
                 (sampleX, sampley) = batches[batch_ind]
@@ -163,7 +156,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
             if limit < 0:
                 limit = 1e-2
             limit = 1e-3
-            if (new_loss - old_loss_ep) >= limit:
+            if (new_loss - old_loss_ep) >= limit and epoch > 20:
                 break
             old_loss_ep = np.average(epoch_loss)
 
@@ -180,7 +173,13 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         logging.info("Predicting Labels")
         y = mathutil.sigmoid((X.dot(self.w)))
         y = np.around(y)
-        return y
+        return np.reshape(y, (y.shape[0],))
+
+    def predict_proba(self, X):
+        c1_prob = mathutil.sigmoid((X.dot(self.w)))
+        c2_prob = 1. - c1_prob
+        return np.concatenate((c2_prob, c1_prob), axis=1)
+
 
     def score(self, X, y, sample_weight=None):
         y_pred = self.predict(X)

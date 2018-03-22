@@ -171,7 +171,8 @@ def mult_row(x, row_vector):
     return coo_matrix((result_data, (result_row, result_col)), shape=x.shape)
 
 
-@numba.jit('void(float64[:], int32[:], int32[:], float64[:], int32[:], int32[:], int64, int64)',
+@numba.jit(['void(float64[:], int32[:], int32[:], float64[:], int32[:], int32[:], int64, int64)',
+            'void(float64[:], int32[:], int32[:], float64[:], int64[:], int64[:], int64, int64)'],
            nopython=True,
            nogil=True
            )
@@ -250,7 +251,8 @@ def coo_row_sum(A):
 
 
 # Parallel??
-@numba.jit('void(float64[:], float64[:], int32[:], int32[:], int64, int64, int64)',
+@numba.jit(['void(float64[:], float64[:], int32[:], int32[:], int64, int64, int64)',
+            'void(float64[:], float64[:], int64[:], int64[:], int64, int64, int64)'],
            nopython=True,
            nogil=True)
 def col_row_sum_numba(result, data, row_ind, col_ind, row_no, col_no, data_no):

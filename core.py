@@ -1,9 +1,7 @@
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import f1_score
 
-from MlcClassifierChains import MlcClassifierChains
 from MlcLinReg import MlcLinReg
-from MlcScore import score_accuracy
 from helpers import load_mlc_dataset, tic, toc, save_sparse_csr, load_sparse_csr
 
 ti = tic()
@@ -53,7 +51,7 @@ except IOError:
 print("Started Fitting")
 feature = 1
 mlc = MlcLinReg(learning_rate=0.08, iterations=600, batch_size=2048,
-                regularization=0.5)
+                l_one=0.5)
 mlc.fit(X_train, y_train[:, feature])
 y_pred = mlc.predict(X_test)
 print "ADAM linreg"
