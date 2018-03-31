@@ -7,6 +7,7 @@ This file implements low-level functions written utilising the numba framework
 ,in order to improve speed when input is sparse.
 """
 
+
 @numba.jit('void(float64[:,:], float64[:], int32[:], int32[:], int64)',
            nopython=True
            )

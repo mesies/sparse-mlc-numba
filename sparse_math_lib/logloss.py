@@ -82,7 +82,7 @@ def log_likelihood(X, W, y):
         Yn = log(1 - sigmoid(X*W) if t = 0        
         """
         signus = np.ones(y.shape)
-        signus[y.nonzero()] = -1
+        signus[nonzero(y)] = -1
 
         dotr = X.dot(csr_matrix(W).T)
 

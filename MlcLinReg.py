@@ -87,34 +87,37 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.learning_rate)
         epoch_loss = []
         # learning rate e, momentum parameter a,
-        self.lossHistory = np.zeros(self.iterations)
 
         batches = list(self.batch_iter(y, X, batch_size))
+        # self.lossHistory = np.zeros(self.iterations * len(batches))
+        self.lossHistory = np.zeros(self.iterations)
         W = self.w
         l_one = self.l_one
         L = np.array(self.learning_rate)
 
+        grads = []
+        once = False
+        once_ep = False
         d = 1e-8
         r1 = 0.9
         r2 = 0.999
         old_loss_ep = np.inf
-        t = 0.
+        t = 0
         s = 0.
         r = 0.
         for epoch in range(0, epochs):
 
             old_loss = np.inf
-            grads = []
             epoch_loss = []
             shuffle_indices = np.random.permutation(np.arange(len(batches)))
             # l_one = 0
 
             for batch_ind in shuffle_indices:
                 (sampleX, sampley) = batches[batch_ind]
-                sampleX, sampley = helpers.shuffle_dataset(sampleX, sampley)
+                #sampleX, sampley = helpers.shuffle_dataset(sampleX, sampley)
 
                 loss = sparse_math_lib.logloss.log_likelihood_sp(X=sampleX, y=sampley, W=W)
-                loss += (l_one * np.sum(np.abs(W)))
+                #loss += (l_one * np.sum(np.abs(W)))
                 assert loss is not np.nan
 
                 epoch_loss.append(loss)
@@ -122,7 +125,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
                 t += 1
 
                 gradient = (sparse_math_lib.gradient.gradient_sp(X=sampleX, W=(W), y=sampley))
-                gradient += (l_one * np.sign(W))
+                #gradient += (l_one * np.sign(W))
                 assert gradient is not np.nan
 
                 grads.append(gradient)
@@ -135,29 +138,39 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
 
                 velocity = -L * (s_hat / (np.sqrt(r_hat) + d))
                 assert velocity is not np.nan
+
                 if np.abs(loss - old_loss) < tolerance:
-                    break
+                    if once:
+                        once = False
+                        break
+                else:
+                    once = True
+
                 old_loss = loss
                 assert velocity.shape == self.w.shape
 
                 W = W + velocity
 
+                # print("Ending epoch {},  loss -> {} velocity -> {}".format(
+                #     t,
+                #     loss,
+                #     np.average(velocity)))
+
             assert self.w.shape == W.shape
             self.w = W
             new_loss = np.average(epoch_loss)
             self.lossHistory[epoch] = new_loss
-            # print("Ending epoch {}, average loss -> {} Epoch gradient AVG -> {}".format(
-            #       epoch,
-            #       np.average(epoch_loss),
-            #       np.average(grads)))
+
 
             # Maybe needs tweaking
-            limit = (((float(epochs) - (epoch ** 3)) ** 3) / (epochs))
-            if limit < 0:
-                limit = 1e-2
+
             limit = 1e-3
-            if (new_loss - old_loss_ep) >= limit and epoch > 20:
-                break
+            if (new_loss - old_loss_ep) >= limit and epoch > 3:
+                if once_ep:
+                    once_ep = False
+                    break
+                else:
+                    once_ep = True
             old_loss_ep = np.average(epoch_loss)
 
         return self.w

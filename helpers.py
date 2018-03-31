@@ -263,22 +263,33 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=ShuffleSplit(n_spl
     return plt
 
 
-def plot_roc_curve(clf, dataset=sklearn.datasets.load_breast_cancer()):
+def plot_roc_curve(clf, dataset=sklearn.datasets.load_breast_cancer(), savefig=False):
     """
     Plot ROC curve.
     @param clf: Classifier
     @param dataset: Dataset
     @return:
     """
+    sparse = False
     iris = dataset
-    X = iris.data
-    y = iris.target
-    X, y = X[y != 2], y[y != 2]
+    try:
+        X = iris.data
+        y = iris.target
+        X, y = X[y != 2], y[y != 2]
+    except AttributeError:
+        if scipy.sparse.issparse(dataset[0]):
+            sparse = True
+            X = dataset[0].toarray()
+            y = dataset[1].toarray()
+        else:
+            X = dataset[0]
+            y = dataset[1]
+
     n_samples, n_features = X.shape
 
     # Add noisy features
     random_state = np.random.RandomState(0)
-    X = np.c_[X, random_state.randn(n_samples, 200 * n_features)]
+    X = (np.c_[X, random_state.randn(n_samples, 50 * n_features)])
 
     # #############################################################################
     # Classification and ROC analysis
@@ -323,9 +334,13 @@ def plot_roc_curve(clf, dataset=sklearn.datasets.load_breast_cancer()):
     plt.ylim([-0.05, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('Receiver operating characteristic example')
+    plt.title('Receiver operating characteristic example' + str(clf.get_params()['batch_size']))
     plt.legend(loc="lower right")
-    plt.show()
+    if savefig:
+        plt.savefig('figures/' + 'ROC' + str(clf.get_params()['batch_size']))
+    else:
+        plt.show()
+    plt.close()
 
 
 def plot_confusion_matrix(clf, dataset=datasets.load_breast_cancer(), X=None, y=None):
@@ -511,7 +526,7 @@ def tic():
     return time()
 
 
-def toc(start_time, str1=" ", print_res=True):
+def toc(start_time, str1=" ", print_res=False):
     """
     MATLAB's toc.
     @param start_time: Time supplied by tic
@@ -529,6 +544,14 @@ def typu(x):
     @return:
     """
     print(type(x))
+
+
+def clf_to_str(message, clf, *args):
+    final_str = str(message)
+    params = clf.get_params()  # dictionary
+    final_str += str(clf).split('(')[0]
+    for par_name in args:
+        final_str += str(params[par_name])
 
 
 def save_sparse_csr(filename, array):

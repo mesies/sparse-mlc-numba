@@ -35,7 +35,7 @@ iterations = 700
 
 for n in N:
     t = tic()
-    mlc1 = MlcLinReg(learning_rate=0.15, iterations=iterations, batch_size=n)
+    mlc1 = MlcLinReg(learning_rate=0.4, iterations=iterations, batch_size=n)
     mlc1.fit(X_train, y_train_f[:, feature])
     y_pred = mlc1.predict(X_test)
     times.append(toc(t))

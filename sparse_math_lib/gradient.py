@@ -41,7 +41,6 @@ def gradient_sp(X, W, y):
     # assert result.shape == W_1dim.shape
 
     return result.T
-    ###########################################
 
 
 def gradient(X, W, y):
