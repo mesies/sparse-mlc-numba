@@ -1,7 +1,6 @@
 import numba
 import numpy as np
 from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
-import numba.cuda
 
 """
 This file implements low-level functions written utilising the numba framework
@@ -184,8 +183,8 @@ def mult_row_matrix_numba(row_vector, x_indptr, x_indices, result_data, result_r
     for i in range(0, dim0):
         result_data[x_indptr[i]:x_indptr[i + 1]] *= row_vector[i]
         col_ind = x_indices[x_indptr[i]:x_indptr[i + 1]]
-        for k in range(0, len(col_ind)):
-            result_col[h] = col_ind[k]
+        for k in col_ind:
+            result_col[h] = k
             result_row[h] = i
             h += 1
 
