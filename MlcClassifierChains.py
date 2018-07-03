@@ -53,21 +53,8 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         logging.info("***************************************************")
 
         shuffle_dataset(X_train, y_train)
-
-        # Train Classifier 0
         X = X_train
-        y = y_train[:, 0]
 
-        # Create an instance of chosen classifier with chosen arguments
-        clf = self.classifier_type(
-            learning_rate=self.learning_rate,
-            batch_size=self.batch_size,
-            iterations=self.iterations,
-        )
-        clf.fit(X, y)
-
-        # Save the trained instance
-        self.trained.append(clf)
 
         # Add label 0 to features
         # X = concatenate_csr_matrices_by_columns(X_train, y_train[:, 0])
@@ -76,7 +63,7 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
 
         _init = False
         # if self.verbose > 0:
-        iterator = tqdm.tqdm(range(1, self.label_dim))
+        iterator = tqdm.tqdm(range(0, self.label_dim))
         # iterator = range(1, self.label_dim)
 
         for i in iterator:

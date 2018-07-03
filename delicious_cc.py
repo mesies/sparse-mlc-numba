@@ -12,7 +12,7 @@ ti = tic()
 X_train_, y_train_, X_test, y_test = load_delicious()
 X_train, y_train = shuffle_dataset(X_train_, y_train_)
 
-mlc = MlcClassifierChains(learning_rate=0.26, iterations=2, batch_size=1087, verbose=1)
+mlc = MlcClassifierChains(learning_rate=0.26, iterations=100, batch_size=2000)
 mlc.fit(X_train, y_train)
 
 y_pred = mlc.predict(X_test)
