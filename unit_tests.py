@@ -12,6 +12,22 @@ Unit tests for critical parts of the classifier.
 
 class MyTestCase(unittest.TestCase):
 
+    def test_sparse_dot(self):
+        A = np.array([
+            [1., 2., 3.],
+            [0., -1., 1.],
+            [3., 4., 5.]])
+
+        B = np.array([
+            [1., 2., 3.]
+        ], ndmin=2)
+        C = A.dot(B.T)
+        from sparse_math_lib.sp_operations import coo_dot
+        import scipy.sparse as sp
+        t = np.max(np.abs(C - coo_dot(sp.coo_matrix(A), B.T)))
+
+        self.assertEqual(t, 0)
+
     def test_sum_rows(self):
         """
         Test mathutil.sum_rows

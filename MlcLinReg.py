@@ -86,9 +86,15 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         logging.info("Commencing sparse-aware SGD")
         logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.learning_rate)
         epoch_loss = []
-        # learning rate e, momentum parameter a,
 
+        # Generate CSR batches
         batches = list(self.batch_iter(y, X, batch_size))
+
+        # Generate COO batches
+        batches_coo = list()
+        for batch in batches:
+            batches_coo.append((batch[0].tocoo(), batch[1].tocoo()))
+
         # self.lossHistory = np.zeros(self.iterations * len(batches))
         self.lossHistory = np.zeros(self.iterations)
         W = self.w

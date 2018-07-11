@@ -17,7 +17,7 @@ X_train, y_train, X_test, y_test = split_train_test(X, y)
 
 t = tic()
 
-mlc = MlcLinReg(learning_rate=0.001, iterations=100, batch_size=300, verbose=False, sparse=True)
+mlc = MlcLinReg(learning_rate=0.001, iterations=1000, batch_size=300)
 W = mlc.fit(sp.csr_matrix(X_train), sp.csr_matrix(y_train).T)
 preds = mlc.predict(X_test)
 print("Score " + str(accuracy_score(y_true=y_test, y_pred=preds)))

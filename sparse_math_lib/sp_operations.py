@@ -8,6 +8,31 @@ This file implements low-level functions written utilising the numba framework
 """
 
 
+def coo_dot(A, B):
+    # A is M x N, coo matrix
+    # B is N x 1
+
+    results = np.zeros((A.shape[0], 1))
+    spmv(A.data, A.row, A.col, B, results)
+
+    assert results.shape == A.dot(B.T).shape
+    return results
+
+
+def spmv(vals, rows, cols, vec, results):
+    for i in range(rows.size - 1):
+        # slice the corresponding column coordinates
+        # and values for each row
+        col_coords = cols[rows[i]:rows[i + 1]]
+        data = vals[rows[i]:rows[i + 1]]
+
+        # dot product with the vector
+        result = 0
+        for col_coord, datum in zip(col_coords, data):
+            result += (vec[col_coord] * datum)
+
+        results[i] = result
+
 @numba.jit('void(float64[:,:], float64[:], int32[:], int32[:], int64)',
            nopython=True
            )
