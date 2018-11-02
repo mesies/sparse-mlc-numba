@@ -69,13 +69,7 @@ try:
 except IOError:
     print("Loading Failed")
     print("Started loading from dataset")
-    X_train, y_train = load_mlc_dataset(DATASET_TRAIN_SET_FILENAME,
-                                        header=True,
-                                        concatbias=True)
-
-    X_test, y_test = load_mlc_dataset(DATASET_TRAIN_SET_FILENAME,
-                                      header=True,
-                                      concatbias=True)
+    X_train, y_train, X_test, y_test = load_mlc_dataset("delicious_large")
     save_sparse_csr("xtrain_big", X_train)
     save_sparse_csr("xtest_big", X_test)
     save_sparse_csr("ytrain_big", y_train)

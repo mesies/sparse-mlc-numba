@@ -53,7 +53,57 @@ def split_train_test(X, y, train_ratio=0.8):
     return X_train, y_train, X_test, y_test
 
 
-def load_mlc_dataset(filename, header=True, concatbias=True):
+def load_mlc_dataset(dataset=None,
+                     DATASET_TRAIN_SET_FILENAME=None,
+                     DATASET_TEST_SET_FILENAME=None,
+                     header_train=True,
+                     concatbias_train=True,
+                     header_test=True,
+                     concatbias_test=True):
+    print("Started Loading Dataset")
+
+    if dataset == "delicious_large":
+        DATASET_TRAIN_SET_FILENAME = "data\\deliciousLarge_train.txt"
+        DATASET_TEST_SET_FILENAME = "data\\deliciousLarge_test.txt"
+
+    if dataset == "rcvix":
+        DATASET_TRAIN_SET_FILENAME = "data\\rcv1x_train.txt"
+        DATASET_TEST_SET_FILENAME = "data\\rcv1x_test.txt"
+
+    if dataset == "eurlex":
+        DATASET_TRAIN_SET_FILENAME = "data\\eurlex_train.txt"
+        DATASET_TEST_SET_FILENAME = "data\\eurlex_test.txt"
+
+    if dataset == "amazonCat":
+        DATASET_TRAIN_SET_FILENAME = "data\\amazonCat_train.txt"
+        DATASET_TEST_SET_FILENAME = "data\\amazonCat_test.txt"
+
+    if dataset == "amazonCat-14K":
+        # Requires at least 12 GB RAM
+        DATASET_TEST_SET_FILENAME = "data\\amazonCat-14K_test.txt"
+        DATASET_TRAIN_SET_FILENAME = "data\\amazonCat-14K_train.txt"
+
+    if dataset == "amazon-3M":
+        DATASET_TRAIN_SET_FILENAME = "data\\amazon-3M_train.txt"
+        DATASET_TEST_SET_FILENAME = "data\\amazon-3M_test.txt"
+
+    if dataset == "wiki10":
+        DATASET_TRAIN_SET_FILENAME = "data\\wiki10_train.txt"
+        DATASET_TEST_SET_FILENAME = "data\\wiki10_test.txt"
+
+    X_train, y_train = load_single_dataset(DATASET_TRAIN_SET_FILENAME,
+                                           header=True,
+                                           concatbias=True)
+
+    X_test, y_test = load_single_dataset(DATASET_TEST_SET_FILENAME,
+                                         header=True,
+                                         concatbias=True)
+    print("Finished Loading Dataset")
+
+    return X_train, y_train, X_test, y_test
+
+
+def load_single_dataset(filename, header=True, concatbias=True):
     """
     This function extends 'load_svmlight_file' so that datasets that have a header
     are parsed correctly
@@ -72,41 +122,49 @@ def load_mlc_dataset(filename, header=True, concatbias=True):
                     2: Label Dimensionality
     """
     logging.info("Started Loading Dataset")
-    f = open(filename, mode='rb')
+    try:
+        X = load_sparse_csr(filename + "_X_cache.npz")
+        y = load_sparse_csr(filename + "_Y_cache.npz")
+    except IOError:
 
-    header_info = False
-    if header:
-        header_info = f.readline().split()
-        Xsparse, y = load_svmlight_file(
-            f=f,
-            multilabel=True,
+        f = open(filename, mode='rb')
 
-        )
-        if concatbias:
-            one = sp.csr_matrix(np.ones(shape=(Xsparse.shape[0], 1)))
-            X = scipy.sparse.hstack([one, Xsparse], format="csr")
+        header_info = False
+        if header:
+            header_info = f.readline().split()
+            Xsparse, y = load_svmlight_file(
+                f=f,
+                multilabel=True,
+
+            )
+            if concatbias:
+                one = sp.csr_matrix(np.ones(shape=(Xsparse.shape[0], 1)))
+                X = scipy.sparse.hstack([one, Xsparse], format="csr")
+            else:
+                X = Xsparse
+
+            DATASET_SIZE = int(header_info[0])
+            FEATURE_NUMBER = int(header_info[1])
+            LABEL_NUMBER = int(header_info[2])
+
+            ult = (sp.lil_matrix((DATASET_SIZE, LABEL_NUMBER)))
+            # iterator = tqdm.trange(0, DATASET_SIZE)
+            iterator = range(0, DATASET_SIZE)
+            for i in iterator:
+                ind_of_labels = np.asarray(y[i], dtype=int)
+                ult[i, ind_of_labels] = 1
+            y = ult.asformat('csr')
+
         else:
-            X = Xsparse
+            X, y = load_svmlight_file(
+                f=f,
+                multilabel=True,
+            )
+        f.close()
+        save_sparse_csr(filename + "_X_cache.npz", X)
+        save_sparse_csr(filename + "_Y_cache.npz", y)
+        logging.info("Finished Loading")
 
-        DATASET_SIZE = int(header_info[0])
-        FEATURE_NUMBER = int(header_info[1])
-        LABEL_NUMBER = int(header_info[2])
-
-        ult = (sp.lil_matrix((DATASET_SIZE, LABEL_NUMBER)))
-        # iterator = tqdm.trange(0, DATASET_SIZE)
-        iterator = range(0, DATASET_SIZE)
-        for i in iterator:
-            ind_of_labels = np.asarray(y[i], dtype=int)
-            ult[i, ind_of_labels] = 1
-        y = ult.asformat('csr')
-
-    else:
-        X, y = load_svmlight_file(
-            f=f,
-            multilabel=True,
-        )
-    f.close()
-    logging.info("Finished Loading")
     return X, y
 
 
@@ -465,6 +523,7 @@ def shuffle_dataset(X, y, copy=False):
     @param copy:
     @return:
     """
+    print("Started Shuffling Data")
     data_size = y.shape[0]
 
     shuffle_indices = np.random.permutation(np.arange(data_size))
@@ -477,6 +536,7 @@ def shuffle_dataset(X, y, copy=False):
     else:
         X_train = shuffled_tx
         y_train = shuffled_y
+    print("Finished Shuffling Data")
 
     return X_train, y_train
 
@@ -633,7 +693,7 @@ def load_delicious(feature=None):
     DATASET_TRAIN_SET_FILENAME = os.path.join('data', DATASET_TRAIN_SET_FILENAME)
     DATASET_TEST_SET_FILENAME = os.path.join('data', DATASET_TEST_SET_FILENAME)
 
-    X, y = load_mlc_dataset(DATASET_FILENAME,
+    X, y = load_single_dataset(DATASET_FILENAME,
                             header=True,
                             concatbias=True)
     f1 = open(DATASET_TRAIN_SET_FILENAME)

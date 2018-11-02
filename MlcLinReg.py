@@ -7,7 +7,6 @@ import scipy.sparse as sp
 import sklearn
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.externals import six
-from sklearn.utils import shuffle
 
 import helpers
 import sparse_math_lib.gradient
@@ -62,7 +61,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
             abs_max = (helpers.grad_check(X, self.w, y))
             return abs_max
 
-        y, X = shuffle(y, X)
+        # y, X = shuffle(y, X)
         if not isinstance(y, sp.csr_matrix):
             y = np.reshape(y, (y.shape[0], 1))
 
@@ -157,10 +156,10 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
 
                 W = W + velocity
 
-                # print("Ending epoch {},  loss -> {} velocity -> {}".format(
-                #     t,
-                #     loss,
-                #     np.average(velocity)))
+                print("Ending epoch {},  loss -> {} velocity -> {}".format(
+                    t,
+                    loss,
+                    np.average(velocity)))
 
             assert self.w.shape == W.shape
             self.w = W

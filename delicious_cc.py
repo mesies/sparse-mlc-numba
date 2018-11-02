@@ -9,10 +9,11 @@ profile = lambda none: none
 
 ti = tic()
 
-X_train_, y_train_, X_test, y_test = load_delicious()
+# X_train_, y_train_, X_test, y_test = load_delicious()
+X_train_, y_train_, X_test, y_test = load_mlc_dataset("delicious_large")
 X_train, y_train = shuffle_dataset(X_train_, y_train_)
 
-mlc = MlcClassifierChains(learning_rate=0.26, iterations=2, batch_size=1087, verbose=1)
+mlc = MlcClassifierChains(learning_rate=0.7, iterations=10, batch_size=50, verbose=1)
 mlc.fit(X_train, y_train)
 
 y_pred = mlc.predict(X_test)
