@@ -86,6 +86,8 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
 
             # Add label i to features
             # X = concatenate_csr_matrices_by_columns(X, y)
+
+            if i == 8: exit(0);
         return self
 
     def predict(self, X_test):

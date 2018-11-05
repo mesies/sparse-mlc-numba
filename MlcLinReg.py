@@ -156,10 +156,10 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
 
                 W = W + velocity
 
-                print("Ending epoch {},  loss -> {} velocity -> {}".format(
-                    t,
-                    loss,
-                    np.average(velocity)))
+                # print("Ending epoch {},  loss -> {} velocity -> {}".format(
+                #     t,
+                #     loss,
+                #     np.average(velocity)))
 
             assert self.w.shape == W.shape
             self.w = W

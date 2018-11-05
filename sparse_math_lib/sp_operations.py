@@ -67,7 +67,8 @@ def nonzero(x):
             'void(int32[:], int32[:], int32[:], int32[:], int64, int64)'],
            nopython=True,
            nogil=True,
-           cache=True)
+           cache=True,
+           fastmath=True)
 def nonzero_numba(result_row, result_col, indices, indptr, columns, iscsr):
     """
     See nonzero
@@ -140,6 +141,81 @@ def sum_of_vector_numba(result, x, sh):
     return result
 
 
+def col_row_sum_raw_mult_col_raw(x, row_vector):
+    # on deliciousLarge -> 8.5s per iter BEFORE
+    #
+
+    result_data = x.data.copy()
+    result_row = np.zeros(x.data.shape[0], dtype=int)
+    result_col = np.zeros(x.data.shape[0], dtype=int)
+
+    result = np.zeros(x.shape[1])
+
+    # data, result_row, result_col = mult_row_raw(x, row_vector)
+    # result = col_row_sum_raw(data, result_row, result_col, x.shape[0], x.shape[1])
+    #
+    col_row_sum_raw_mult_col_raw_NUMBA(
+        result,
+        row_vector.ravel(),
+        x.indptr,
+        x.indices,
+        result_data,
+        result_row,
+        result_col,
+        x.shape[0],
+        x.shape[1])
+    return np.reshape(result, (1, result.shape[0]))
+
+
+@numba.jit(['void(float64[:], float64[:], int32[:], int32[:], float64[:], int32[:], int32[:], int64, int64)',
+            'void(float64[:], float64[:], int32[:], int32[:], float64[:], int64[:], int64[:], int64, int64)'],
+           nopython=True,
+           nogil=True,
+           fastmath=True
+           )
+def col_row_sum_raw_mult_col_raw_NUMBA(result,
+                                       row_vector,
+                                       x_indptr,
+                                       x_indices,
+                                       result_data,
+                                       result_row,
+                                       result_col,
+                                       x_dim0,
+                                       x_dim1):
+    # mult row raw
+    h = 0
+
+    for i in xrange(0, x_dim0):
+
+        result_data[x_indptr[i]:x_indptr[i + 1]] *= row_vector[i]
+        col_ind = x_indices[x_indptr[i]:x_indptr[i + 1]]
+        for k in col_ind:
+            result_col[h] = k
+            result_row[h] = i
+            h += 1
+
+            # result[result_col[h]] += result_data[h]
+    for j in xrange(0, len(result_data)):
+        result[result_col[j]] += result_data[j]
+
+
+# @profile
+def col_row_sum_raw(data, row, col, shape0, shape1):
+    """
+    Has same function as coo_row_sum but its input is, instead of
+    a single coo_matrix, its components.
+    @param data:
+    @param row:
+    @param col:
+    @param shape0:
+    @param shape1:
+    @return:
+    """
+    result = np.zeros(shape1)
+    col_row_sum_numba(result, data, row, col, shape0, shape1, data.shape[0])
+    return np.reshape(result, (1, result.shape[0]))
+
+
 def mult_row_raw(x, row_vector):
     """
     Has same function as mult_raw but returns rather than a coo_matrix
@@ -152,13 +228,7 @@ def mult_row_raw(x, row_vector):
     result_row = np.zeros(x.data.shape[0], dtype=int)
     result_col = np.zeros(x.data.shape[0], dtype=int)
 
-    mult_row_matrix_numba(row_vector.ravel(),
-                          x.indptr,
-                          x.indices,
-                          result_data,
-                          result_row,
-                          result_col,
-                          x.shape[0],
+    mult_row_matrix_numba(row_vector.ravel(), x.indptr, x.indices, result_data, result_row, result_col, x.shape[0],
                           x.shape[1])
 
     return result_data, result_row, result_col
@@ -181,13 +251,7 @@ def mult_row(x, row_vector):
     result_row = np.zeros(x.data.shape[0], dtype=int)
     result_col = np.zeros(x.data.shape[0], dtype=int)
 
-    mult_row_matrix_numba(row_vector.ravel(),
-                          x.indptr,
-                          x.indices,
-                          result_data,
-                          result_row,
-                          result_col,
-                          x.shape[0],
+    mult_row_matrix_numba(row_vector.ravel(), x.indptr, x.indices, result_data, result_row, result_col, x.shape[0],
                           x.shape[1])
 
     # We must return coo
@@ -200,12 +264,13 @@ def mult_row(x, row_vector):
 @numba.jit(['void(float64[:], int32[:], int32[:], float64[:], int32[:], int32[:], int64, int64)',
             'void(float64[:], int32[:], int32[:], float64[:], int64[:], int64[:], int64, int64)'],
            nopython=True,
-           nogil=True
+           nogil=True,
+           fastmath=True
            )
-def mult_row_matrix_numba(row_vector, x_indptr, x_indices, result_data, result_row, result_col, dim0, dim1):
+def mult_row_matrix_numba(row_vector, x_indptr, x_indices, result_data, result_row, result_col, x_dim0, x_dim1):
     h = 0
 
-    for i in range(0, dim0):
+    for i in range(0, x_dim0):
         result_data[x_indptr[i]:x_indptr[i + 1]] *= row_vector[i]
         col_ind = x_indices[x_indptr[i]:x_indptr[i + 1]]
         for k in col_ind:
@@ -243,22 +308,6 @@ def mult_col(x, col_vector):
     return xw_hat
 
 
-def col_row_sum_raw(data, row, col, shape0, shape1):
-    """
-    Has same function as coo_row_sum but its input is, instead of
-    a single coo_matrix, its components.
-    @param data:
-    @param row:
-    @param col:
-    @param shape0:
-    @param shape1:
-    @return:
-    """
-    result = np.zeros(shape1)
-    col_row_sum_numba(result, data, row, col, shape0, shape1, data.shape[0])
-    return np.reshape(result, (1, result.shape[0]))
-
-
 def coo_row_sum(A):
     """
     Function which returns sum of eaxh row,
@@ -280,7 +329,8 @@ def coo_row_sum(A):
 @numba.jit(['void(float64[:], float64[:], int32[:], int32[:], int64, int64, int64)',
             'void(float64[:], float64[:], int64[:], int64[:], int64, int64, int64)'],
            nopython=True,
-           nogil=True)
+           nogil=True,
+           fastmath=True)
 def col_row_sum_numba(result, data, row_ind, col_ind, row_no, col_no, data_no):
     for k in range(0, data_no):
         result[col_ind[k]] += data[k]

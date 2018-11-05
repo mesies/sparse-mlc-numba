@@ -1,7 +1,7 @@
 import numpy as np
 
 from sparse_math_lib.mathutil import sigmoid
-from sparse_math_lib.sp_operations import nonzero, mult_row_raw, col_row_sum_raw
+from sparse_math_lib.sp_operations import nonzero, col_row_sum_raw_mult_col_raw
 
 """
 This file implements the gradient.
@@ -36,9 +36,10 @@ def gradient_sp(X, W, y):
         sdotp[resultrow] -= 1
 
     # (sigm(XW) - y) * X,T
-    data, row, col = mult_row_raw(X, sdotp)
-    result = col_row_sum_raw(data, row, col, X.shape[0], X.shape[1])
-    # assert result.shape == W_1dim.shape
+    # data, row, col = mult_row_raw(X, sdotp)
+    # result = col_row_sum_raw(data, row, col, X.shape[0], X.shape[1])
+    result = col_row_sum_raw_mult_col_raw(X, sdotp)
+    assert result.shape[0] == W.shape[1]
 
     return result.T
 
