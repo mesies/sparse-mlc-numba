@@ -23,7 +23,8 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
                  sparse=True,
                  verbose=0,
                  batch_size=300,
-                 parameter_pack=None):
+                 parameter_pack=None,
+                 limit_iterations_for_debug=None):
 
         self.learning_rate = learning_rate
         self.iterations = iterations
@@ -36,6 +37,8 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         self.classifier_type = MlcLinReg
         self.label_dim = -1
         self.lossHistory = []
+
+        self.limit_iterations_for_debug = limit_iterations_for_debug
         logging.basicConfig(level=logging.WARNING)
 
     @profile
@@ -87,7 +90,9 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
             # Add label i to features
             # X = concatenate_csr_matrices_by_columns(X, y)
 
-            if i == 8: exit(0);
+            if self.limit_iterations_for_debug != None:
+                if i == self.limit_iterations_for_debug: exit(0)
+
         return self
 
     def predict(self, X_test):
