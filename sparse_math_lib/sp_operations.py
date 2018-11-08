@@ -1,5 +1,6 @@
 import numba
 import numpy as np
+from numba import prange
 from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
 
 """
@@ -33,11 +34,11 @@ def spmv(vals, rows, cols, vec, results):
 
         results[i] = result
 
+
 @numba.jit('void(float64[:,:], float64[:], int32[:], int32[:], int64)',
            nopython=True
            )
 def mult_row_sparse_numba(result, matrix, result_row, result_col, lenrow):
-
     for i in xrange(0, lenrow):
         row = np.take(result_row, i)
         col = np.take(result_col, i)
@@ -141,7 +142,14 @@ def sum_of_vector_numba(result, x, sh):
     return result
 
 
-def col_row_sum_raw_mult_col_raw(x, row_vector):
+def mult_col_raw_col_row_sum_raw(x, row_vector):
+    """
+    A combination of @col_row_sum_raw and @mult_mult_row_raw functions in order to save some
+    memory and improve performance.
+    @param x:
+    @param row_vector:
+    @return:
+    """
     # on deliciousLarge -> 8.5s per iter BEFORE
     #
 
@@ -154,7 +162,7 @@ def col_row_sum_raw_mult_col_raw(x, row_vector):
     # data, result_row, result_col = mult_row_raw(x, row_vector)
     # result = col_row_sum_raw(data, result_row, result_col, x.shape[0], x.shape[1])
     #
-    col_row_sum_raw_mult_col_raw_NUMBA(
+    mult_col_raw_col_row_sum_raw_numba(
         result,
         row_vector.ravel(),
         x.indptr,
@@ -173,7 +181,7 @@ def col_row_sum_raw_mult_col_raw(x, row_vector):
            nogil=True,
            fastmath=True
            )
-def col_row_sum_raw_mult_col_raw_NUMBA(result,
+def mult_col_raw_col_row_sum_raw_numba(result,
                                        row_vector,
                                        x_indptr,
                                        x_indices,
@@ -185,7 +193,7 @@ def col_row_sum_raw_mult_col_raw_NUMBA(result,
     # mult row raw
     h = 0
 
-    for i in xrange(0, x_dim0):
+    for i in range(0, x_dim0):
 
         result_data[x_indptr[i]:x_indptr[i + 1]] *= row_vector[i]
         col_ind = x_indices[x_indptr[i]:x_indptr[i + 1]]
@@ -195,7 +203,7 @@ def col_row_sum_raw_mult_col_raw_NUMBA(result,
             h += 1
 
             # result[result_col[h]] += result_data[h]
-    for j in xrange(0, len(result_data)):
+    for j in prange(0, len(result_data)):
         result[result_col[j]] += result_data[j]
 
 

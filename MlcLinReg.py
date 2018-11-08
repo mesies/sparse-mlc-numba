@@ -169,16 +169,20 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
 
             # Maybe needs tweaking
 
-            limit = 1e-3
-            if (new_loss - old_loss_ep) >= limit and epoch > 3:
-                if once_ep:
-                    once_ep = False
-                    break
-                else:
-                    once_ep = True
+
             old_loss_ep = np.average(epoch_loss)
+            if self.stopping_criterion(new_loss, old_loss_ep, epoch): break
 
         return self.w
+
+    def stopping_criterion(self, loss, old_loss, epoch):
+        limit = 1e-3
+        improvement_limit_percent = 0.01
+        epoch_limit = 3
+        if (((loss - old_loss) / old_loss) < improvement_limit_percent or abs(
+                loss - old_loss) <= limit) and epoch_limit > 3:
+            return True
+        return False
 
     def batch_iter(self, y, tx, batch_size, shuffle=False):
         """
