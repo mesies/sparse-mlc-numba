@@ -2,12 +2,13 @@ import numpy as np
 import scipy
 from scipy.sparse import csr_matrix
 
-from sparse_math_lib.sp_operations import nonzero, mult_col
+import sp_operations as sp_op
+from helpers.profile_support import profile
 
 """
 Log loss implementation.
 """
-profile = lambda f: f
+
 
 
 # '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
@@ -16,6 +17,7 @@ profile = lambda f: f
 
 
 # Optimised
+@profile
 def log_likelihood_sp(X, W, y):
     """
     Log loss sparse optimised function.
@@ -27,12 +29,12 @@ def log_likelihood_sp(X, W, y):
     # -1 ^ y
     signus = np.ones(y.shape)
     if y.nnz != 0:
-        result_row, result_col = nonzero(y)
+        result_row, result_col = sp_op.nonzero(y)
         signus[result_row] = -1
 
     # (XW) * (-1 ^ y)
     xw = X.dot(W)
-    xw_hat = mult_col(xw, signus)
+    xw_hat = sp_op.mult_col(xw, signus)
 
     logg = np.logaddexp(0, xw_hat)
 
@@ -82,7 +84,7 @@ def log_likelihood(X, W, y):
         Yn = log(1 - sigmoid(X*W) if t = 0        
         """
         signus = np.ones(y.shape)
-        signus[nonzero(y)] = -1
+        signus[sp_op.nonzero(y)] = -1
 
         dotr = X.dot(csr_matrix(W).T)
 

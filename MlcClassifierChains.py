@@ -9,8 +9,9 @@ from sklearn.externals import six
 import MlcScore
 from MlcLinReg import MlcLinReg
 from helpers import shuffle_dataset
+from helpers.profile_support import profile
 
-profile = lambda f: f
+
 # '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
 # as few lines as possible each time line_profiler is run a lambda is used
 # Comment when debugging with line profiler

@@ -1,19 +1,21 @@
 import numpy as np
 
+import sp_operations as sp_op
 from sparse_math_lib.mathutil import sigmoid
-from sparse_math_lib.sp_operations import nonzero, mult_col_raw_col_row_sum_raw
 
 """
 This file implements the gradient.
 """
-profile = lambda f: f
+
+
+# profile = lambda f: f
 
 
 # '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
 # as few lines as possible each time line_profiler is run a lambda is used
 # Comment when debugging with line profiler
 
-@profile
+# @profile
 def gradient_sp(X, W, y):
     """
        Gradient of log_likelihood optimised for sparse matrices.
@@ -32,13 +34,13 @@ def gradient_sp(X, W, y):
         # which for : y_n = 1 -> s = 1
         # and for   : y_n = 0 -> s = -1
         # Because y[ind] = 1, if ind = y.nonzero()
-        resultrow, resultcol = nonzero(y)
+        resultrow, resultcol = sp_op.nonzero(y)
         sdotp[resultrow] -= 1
 
     # (sigm(XW) - y) * X,T
     # data, row, col = mult_row_raw(X, sdotp)
     # result = col_row_sum_raw(data, row, col, X.shape[0], X.shape[1])
-    result = mult_col_raw_col_row_sum_raw(X, sdotp)
+    result = sp_op.mult_col_raw_col_row_sum_raw(X, sdotp)
     assert result.shape[0] == W.shape[1]
 
     return result.T

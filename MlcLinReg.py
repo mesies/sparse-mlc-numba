@@ -11,9 +11,9 @@ from sklearn.externals import six
 import helpers
 import sparse_math_lib.gradient
 import sparse_math_lib.logloss
+from helpers.profile_support import profile
 from sparse_math_lib import mathutil
 
-profile = lambda f: f
 # '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
 # as few lines as possible each time line_profiler is run a lambda is used
 # Comment when debugging with line profiler
@@ -45,6 +45,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         else:
             logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.DEBUG)
 
+    @profile
     def fit(self, X, y):
         """
         Fits the classifier using X and y as training examples

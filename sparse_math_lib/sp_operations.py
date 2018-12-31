@@ -3,6 +3,8 @@ import numpy as np
 from numba import prange
 from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
 
+from helpers.profile_support import profile
+
 """
 This file implements low-level functions written utilising the numba framework
 ,in order to improve speed when input is sparse.
@@ -142,6 +144,7 @@ def sum_of_vector_numba(result, x, sh):
     return result
 
 
+@profile
 def mult_col_raw_col_row_sum_raw(x, row_vector):
     """
     A combination of @col_row_sum_raw and @mult_mult_row_raw functions in order to save some
@@ -308,11 +311,11 @@ def mult_col_matrix_numba(column_vector, matrix, result, dim0, dim1):
 
 def mult_col(x, col_vector):
     if x.shape[0] == 1:
-        x_newsize = np.reshape(x, (x.shape[1]))
+        x_newSize = np.reshape(x, (x.shape[1]))
     else:
-        x_newsize = np.reshape(x, (x.shape[0]))
+        x_newSize = np.reshape(x, (x.shape[0]))
     xw_hat = np.zeros(col_vector.shape)
-    mult_col_matrix_numba(x_newsize, col_vector, xw_hat, col_vector.shape[0], col_vector.shape[1])
+    mult_col_matrix_numba(x_newSize, col_vector, xw_hat, col_vector.shape[0], col_vector.shape[1])
     return xw_hat
 
 
