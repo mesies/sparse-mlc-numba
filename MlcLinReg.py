@@ -1,4 +1,3 @@
-import logging
 from abc import ABCMeta
 
 import matplotlib.pyplot as plt
@@ -27,23 +26,18 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
     def __init__(self,
                  learning_rate=0.2,
                  iterations=200,
-                 verbose=False,
                  grad_check=False,
                  batch_size=512,
                  l_one=0.01):
 
         self.batch_size = batch_size
-        self.verbose = verbose
         self.grad_check = grad_check
         self.learning_rate = learning_rate
         self.iterations = iterations
         self.w = {}
         self.lossHistory = np.zeros(iterations)
         self.l_one = l_one
-        if verbose:
-            logging.basicConfig(level=logging.DEBUG)
-        else:
-            logging.basicConfig(filename=__name__ + '.log', filemode='w', level=logging.DEBUG)
+
 
     @profile
     def fit(self, X, y):
@@ -54,11 +48,9 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         @return:
         """
 
-        logging.info("Started Fitting Dataa")
         self.w = (np.random.uniform(size=(X.shape[1], 1)))
 
         if self.grad_check:
-            logging.info("Commencing Gradient Check")
             abs_max = (helpers.grad_check(X, self.w, y))
             return abs_max
 
@@ -77,14 +69,18 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         return self
 
     @profile
-    def stochastic_gradient_descent_sparse(self, X, y):
 
+    def stochastic_gradient_descent_sparse(self, X, y):
+        """
+        ADAM Optimiser Implementation with custom stopping criterion
+        @param X:
+        @param y:
+        @return:
+        """
         tolerance = 1e-3
         epochs = self.iterations
         batch_size = self.batch_size
 
-        logging.info("Commencing sparse-aware SGD")
-        logging.info("Options : tol = %f, epochs = %f, learning rate = %f", tolerance, epochs, self.learning_rate)
         epoch_loss = []
 
         # Generate CSR batches
@@ -102,18 +98,16 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         L = np.array(self.learning_rate)
 
         grads = []
-        once = False
-        once_ep = False
+
         d = 1e-8
         r1 = 0.9
         r2 = 0.999
-        old_loss_ep = np.inf
+
         t = 0
         s = 0.
         r = 0.
         for epoch in range(0, epochs):
 
-            old_loss = np.inf
             epoch_loss = []
             shuffle_indices = np.random.permutation(np.arange(len(batches)))
             # l_one = 0
@@ -145,13 +139,6 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
                 velocity = -L * (s_hat / (np.sqrt(r_hat) + d))
                 assert velocity is not np.nan
 
-                if np.abs(loss - old_loss) < tolerance:
-                    if once:
-                        once = False
-                        break
-                else:
-                    once = True
-
                 old_loss = loss
                 assert velocity.shape == self.w.shape
 
@@ -163,25 +150,25 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
                 #     np.average(velocity)))
 
             assert self.w.shape == W.shape
+
             self.w = W
             new_loss = np.average(epoch_loss)
             self.lossHistory[epoch] = new_loss
 
-
             # Maybe needs tweaking
-
-
             old_loss_ep = np.average(epoch_loss)
             if self.stopping_criterion(new_loss, old_loss_ep, epoch): break
 
         return self.w
 
     def stopping_criterion(self, loss, old_loss, epoch):
+
         limit = 1e-3
         improvement_limit_percent = 0.01
         epoch_limit = 3
+
         if (((loss - old_loss) / old_loss) < improvement_limit_percent or abs(
-                loss - old_loss) <= limit) and epoch_limit > 3:
+                loss - old_loss) <= limit) and epoch > epoch_limit:
             return True
         return False
 
@@ -193,7 +180,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         return helpers.batch_iter(y, tx, batch_size, shuffle)
 
     def predict(self, X):
-        logging.info("Predicting Labels")
+
         y = mathutil.sigmoid((X.dot(self.w)))
         y = np.around(y)
         return np.reshape(y, (y.shape[0],))

@@ -13,10 +13,7 @@ X_train_, y_train_, X_test, y_test = load_delicious()
 # X_train_, y_train_, X_test, y_test = load_mlc_dataset("delicious_large")
 X_train, y_train = shuffle_dataset(X_train_, y_train_)
 
-mlc = MlcClassifierChains(learning_rate=1.2,
-                          iterations=50,
-                          batch_size=320,
-                          )
+mlc = MlcClassifierChains(learning_rate=1.2, iterations=50, batch_size=320)
 mlc.fit(X_train, y_train)
 
 y_pred = mlc.predict(X_test)

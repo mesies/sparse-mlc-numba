@@ -1,4 +1,4 @@
-import logging
+
 from abc import ABCMeta
 
 import numpy as np
@@ -18,19 +18,12 @@ from helpers.profile_support import profile
 
 
 class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
-    def __init__(self,
-                 learning_rate=0.0499,
-                 iterations=1000,
-                 sparse=True,
-                 verbose=0,
-                 batch_size=300,
-                 parameter_pack=None,
+    def __init__(self, learning_rate=0.0499, iterations=1000, sparse=True, batch_size=300, parameter_pack=None,
                  limit_iterations_for_debug=None):
 
         self.learning_rate = learning_rate
         self.iterations = iterations
         self.sparse = sparse
-        self.verbose = verbose
         self.batch_size = batch_size
         self.parameter_pack = parameter_pack
 
@@ -40,7 +33,6 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         self.lossHistory = []
 
         self.limit_iterations_for_debug = limit_iterations_for_debug
-        logging.basicConfig(level=logging.WARNING)
 
     @profile
     def fit(self, X_train, y_train):
@@ -52,9 +44,6 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         @param X_train: Features of training examples.
         @param y_train: Labels of training examples
         """
-        logging.info("***************************************************")
-        logging.info("       Commencing Classifier Chain training")
-        logging.info("***************************************************")
 
         shuffle_dataset(X_train, y_train)
         X = X_train
@@ -102,9 +91,6 @@ class MlcClassifierChains(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierM
         @param X_test:
         @return:
         """
-        logging.info("***************************************************")
-        logging.info("       Commencing Classifier Chain predicting")
-        logging.info("***************************************************")
 
         # Predict Label 0
         i = 0
