@@ -28,7 +28,8 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
                  iterations=200,
                  grad_check=False,
                  batch_size=512,
-                 l_one=0.01):
+                 l_one=0.01,
+                 optimiser="ADAM"):
 
         self.batch_size = batch_size
         self.grad_check = grad_check
@@ -37,7 +38,17 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         self.w = {}
         self.lossHistory = np.zeros(iterations)
         self.l_one = l_one
+        if optimiser == "ADAM":
+            self.updateFunc = self.adam
 
+    def adam(self, W, gradient):
+        return None
+
+    def momementum(self, W, gradient):
+        return None
+
+    def default(self, W, gradient):
+        return None
 
     @profile
     def fit(self, X, y):
@@ -69,7 +80,6 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         return self
 
     @profile
-
     def stochastic_gradient_descent_sparse(self, X, y):
         """
         ADAM Optimiser Implementation with custom stopping criterion
@@ -118,7 +128,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
                 #sampleX, sampley = helpers.shuffle_dataset(sampleX, sampley)
 
                 loss = sparse_math_lib.logloss.log_likelihood_sp(X=sampleX, y=sampley, W=W)
-                #loss += (l_one * np.sum(np.abs(W)))
+                loss += (l_one * W.T.dot(W))
                 assert loss is not np.nan
 
                 epoch_loss.append(loss)
@@ -126,7 +136,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
                 t += 1
 
                 gradient = (sparse_math_lib.gradient.gradient_sp(X=sampleX, W=(W), y=sampley))
-                #gradient += (l_one * np.sign(W))
+                gradient += l_one * self.w
                 assert gradient is not np.nan
 
                 grads.append(gradient)
@@ -165,8 +175,8 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
     def stopping_criterion(self, loss, old_loss, epoch):
 
         limit = 1e-3
-        improvement_limit_percent = 0.001
-        epoch_limit = 300
+        improvement_limit_percent = 0.0001
+        epoch_limit = 150
 
         rules_and = []
 
@@ -174,7 +184,9 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
                                          abs(loss - old_loss) <= limit
         epoch_rule = epoch > epoch_limit
 
-        rules_and.append(improvement_limit_percent_rule)
+        positive_improvemnt_rule = abs(loss - old_loss) <= limit
+
+        rules_and.append(positive_improvemnt_rule)
         rules_and.append(epoch_rule)
 
         stop = True
@@ -182,6 +194,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
             stop = rule and stop
 
         if (stop):
+            print "Stopping MLC-SGD at " + str(loss) + " " + str(old_loss) + " epoch " + str(epoch)
             return True
         return False
 
@@ -230,3 +243,32 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
                 break
             loss_h.append(self.lossHistory[i])
         return loss_h
+
+    def bayesianCVparams(self, X, y):
+        import skopt
+        import pandas as pd
+        search_spaces = {
+            "iterations": skopt.space.Integer(20, 400),
+            "batch_size": skopt.space.Integer(20, 3000),
+            "learning_rate": skopt.space.Real(0.001, 0.5, prior="log-uniform")}
+
+        searchcv = skopt.BayesSearchCV(n_iter=400,
+                                       estimator=self,
+                                       search_spaces=search_spaces,
+                                       n_jobs=5,
+                                       cv=5)
+
+        def status_print(optim_result):
+            """Status callback durring bayesian hyperparameter search"""
+            # Get all the models tested so far in DataFrame format
+            all_models = pd.DataFrame(searchcv.cv_results_)
+            # Get current parameters and the best parameters
+            best_params = pd.Series(searchcv.best_params_)
+            print('Model #{}\nBest ROC-AUC: {}\nBest params: {}\n'.format(len(all_models),
+                                                                          np.round(searchcv.best_score_, 4),
+                                                                          searchcv.best_params_))
+            # Save all model results
+            clf_name = searchcv.estimator.__class__.__name__
+            all_models.to_csv(clf_name + "_cv_results.csv")
+
+        searchcv.fit(X, y, callback=status_print)
