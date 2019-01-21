@@ -29,7 +29,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
                  grad_check=False,
                  batch_size=512,
                  l_one=0.01,
-                 optimiser="ADAM"):
+                 optimiser=None):
 
         self.batch_size = batch_size
         self.grad_check = grad_check
@@ -38,17 +38,41 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         self.w = {}
         self.lossHistory = np.zeros(iterations)
         self.l_one = l_one
-        if optimiser == "ADAM":
+        if optimiser == "adam":
+            self.d = 1e-8
+            self.r1 = 0.9
+            self.r2 = 0.999
+
+            self.t = 0
+            self.s = 0.
+            self.r = 0.
+
+            self.L = np.array(self.learning_rate)
             self.updateFunc = self.adam
 
+        if optimiser == None:
+            self.updateFunc = self.default
+
+
     def adam(self, W, gradient):
-        return None
+        self.t += 1
+        self.s = self.r1 * self.s + (1. - self.r1) * gradient
+        self.r = self.r2 * self.r + ((1. - self.r2) * gradient) * gradient
+
+        s_hat = self.s / (1. - (self.r1 ** self.t))
+        r_hat = self.r / (1. - (self.r2 ** self.t))
+
+        velocity = -self.L * (s_hat / (np.sqrt(r_hat) + self.d))
+        assert velocity is not np.nan
+        assert velocity.shape == W.shape
+
+        return W + velocity
 
     def momementum(self, W, gradient):
         return None
 
     def default(self, W, gradient):
-        return None
+        return W - self.learning_rate * gradient
 
     @profile
     def fit(self, X, y):
@@ -97,25 +121,18 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         batches = list(self.batch_iter(y, X, batch_size))
 
         # Generate COO batches
-        batches_coo = list()
-        for batch in batches:
-            batches_coo.append((batch[0].tocoo(), batch[1].tocoo()))
+        # batches_coo = list()
+        # for batch in batches:
+        #     batches_coo.append((batch[0].tocoo(), batch[1].tocoo()))
 
         # self.lossHistory = np.zeros(self.iterations * len(batches))
         self.lossHistory = np.zeros(self.iterations)
-        W = self.w
+
         l_one = self.l_one
-        L = np.array(self.learning_rate)
+
 
         grads = []
 
-        d = 1e-8
-        r1 = 0.9
-        r2 = 0.999
-
-        t = 0
-        s = 0.
-        r = 0.
 
         for epoch in range(0, epochs):
 
@@ -127,42 +144,25 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
                 (sampleX, sampley) = batches[batch_ind]
                 #sampleX, sampley = helpers.shuffle_dataset(sampleX, sampley)
 
-                loss = sparse_math_lib.logloss.log_likelihood_sp(X=sampleX, y=sampley, W=W)
-                loss += (l_one * W.T.dot(W))
+                loss = sparse_math_lib.logloss.log_likelihood_sp(X=sampleX, y=sampley, W=self.w)
+                # loss += (l_one * W.T.dot(W))
                 assert loss is not np.nan
 
                 epoch_loss.append(loss)
 
-                t += 1
-
-                gradient = (sparse_math_lib.gradient.gradient_sp(X=sampleX, W=(W), y=sampley))
-                gradient += l_one * self.w
+                gradient = (sparse_math_lib.gradient.gradient_sp(X=sampleX, W=self.w, y=sampley))
+                #gradient += l_one * self.w
                 assert gradient is not np.nan
 
                 grads.append(gradient)
 
-                s = r1 * s + (1. - r1) * gradient
-                r = r2 * r + ((1. - r2) * gradient) * gradient
-
-                s_hat = s / (1. - (r1 ** t))
-                r_hat = r / (1. - (r2 ** t))
-
-                velocity = -L * (s_hat / (np.sqrt(r_hat) + d))
-                assert velocity is not np.nan
-
-                old_loss = loss
-                assert velocity.shape == self.w.shape
-
-                W = W + velocity
+                self.w = self.updateFunc(self.w, gradient)
 
                 # print("Ending epoch {},  loss -> {} velocity -> {}".format(
                 #     t,
                 #     loss,
                 #     np.average(velocity)))
 
-            assert self.w.shape == W.shape
-
-            self.w = W
             new_loss = np.average(epoch_loss)
             self.lossHistory[epoch] = new_loss
 
