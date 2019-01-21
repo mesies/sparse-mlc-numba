@@ -9,8 +9,8 @@ import sparse_math_lib.sp_operations
 
 # Nonzero
 def runtime_x_density():
-    m = 10000
-    n = 100000
+    m = 1000
+    n = 10000
     iter = 100
     X = np.arange(0.001, 0.001 * iter, 0.001)
     Y = []
@@ -37,14 +37,16 @@ def runtime_x_density():
 
 
 def runtime_x_columns():
-    m = 10000
-    n = 100000
+    m = 1000
+    n = 10000
     iter = 10
-    X = np.arange(10000, 10000 * 2, (10000 * 2) / 10)
+
+    n_batch = 5000
+    X = np.arange(n_batch, n_batch * iter, n_batch)
     Y = []
     Y2 = []
 
-    for i in tqdm.tqdm(np.arange(10000, 10000 * 2, (10000 * 2) / 10)):
+    for i in tqdm.tqdm(X):
         A = scipy.sparse.rand(n, i, density=0.001, format='csr', dtype=float)
         t = helpers.tic()
         sparse_math_lib.sp_operations.nonzero(A)
@@ -65,15 +67,18 @@ def runtime_x_columns():
 
 
 def runtime_x_rows():
-    m = 10000
-    n = 100000
+    m = 1000
+    n = 10000
     iter = 10
-    X = np.arange(10000, 10000 * 2, (10000 * 2) / 10)
+
+    n_batch = 5000
+    X = np.arange(n_batch, n_batch * iter, n_batch)
+
     Y = []
     Y2 = []
 
-    for i in tqdm.tqdm(np.arange(10000, 10000 * 2, (10000 * 2) / 10)):
-        A = scipy.sparse.rand(n, i, density=0.001, format='csr', dtype=float)
+    for i in tqdm.tqdm(X):
+        A = scipy.sparse.rand(i, n, density=0.001, format='csr', dtype=float)
         t = helpers.tic()
         sparse_math_lib.sp_operations.nonzero(A)
         Y.append(helpers.toc(t))
@@ -90,3 +95,9 @@ def runtime_x_rows():
 
     plt.title("Function runtime as rows of matrix are increasing")
     plt.show()
+
+
+# runtime_x_density()
+# runtime_x_columns()
+# runtime_x_rows()
+sparse_math_lib.sp_operations.nonzero_numba.inspect_types()

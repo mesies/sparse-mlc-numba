@@ -1,5 +1,4 @@
 import itertools
-import logging
 import os
 from time import time
 
@@ -121,7 +120,6 @@ def load_single_dataset(filename, header=True, concatbias=True):
                     1: Feature Dimensionality
                     2: Label Dimensionality
     """
-    logging.info("Started Loading Dataset")
     try:
         X = load_sparse_csr(filename + "_X_cache.npz")
         y = load_sparse_csr(filename + "_Y_cache.npz")
@@ -163,7 +161,6 @@ def load_single_dataset(filename, header=True, concatbias=True):
         f.close()
         save_sparse_csr(filename + "_X_cache.npz", X)
         save_sparse_csr(filename + "_Y_cache.npz", y)
-        logging.info("Finished Loading")
 
     return X, y
 
@@ -523,7 +520,6 @@ def shuffle_dataset(X, y, copy=False):
     @param copy:
     @return:
     """
-    print("Started Shuffling Data")
     data_size = y.shape[0]
 
     shuffle_indices = np.random.permutation(np.arange(data_size))
@@ -536,7 +532,8 @@ def shuffle_dataset(X, y, copy=False):
     else:
         X_train = shuffled_tx
         y_train = shuffled_y
-    print("Finished Shuffling Data")
+
+    assert X.shape == X_train.shape and y.shape == y_train.shape
 
     return X_train, y_train
 

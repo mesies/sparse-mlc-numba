@@ -106,6 +106,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         t = 0
         s = 0.
         r = 0.
+
         for epoch in range(0, epochs):
 
             epoch_loss = []
@@ -164,11 +165,23 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
     def stopping_criterion(self, loss, old_loss, epoch):
 
         limit = 1e-3
-        improvement_limit_percent = 0.01
-        epoch_limit = 3
+        improvement_limit_percent = 0.001
+        epoch_limit = 300
 
-        if (((loss - old_loss) / old_loss) < improvement_limit_percent or abs(
-                loss - old_loss) <= limit) and epoch > epoch_limit:
+        rules_and = []
+
+        improvement_limit_percent_rule = ((loss - old_loss) / old_loss) < improvement_limit_percent or \
+                                         abs(loss - old_loss) <= limit
+        epoch_rule = epoch > epoch_limit
+
+        rules_and.append(improvement_limit_percent_rule)
+        rules_and.append(epoch_rule)
+
+        stop = True
+        for rule in rules_and:
+            stop = rule and stop
+
+        if (stop):
             return True
         return False
 
@@ -204,8 +217,8 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         """
 
         fig = plt.figure()
-        plt.plot(np.arange(0, len(self.get_loss_history())), self.get_loss_history())
-        fig.suptitle("Training Loss")
+        plt.plot(np.arange(0, len(self.get_loss_history())), self.get_loss_history(), label="Log Loss")
+        fig.suptitle("MLC-SGD Training Loss")
         plt.xlabel("Epoch #")
         plt.ylabel("Loss")
         plt.show()
