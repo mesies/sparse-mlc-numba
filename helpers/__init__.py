@@ -520,22 +520,9 @@ def shuffle_dataset(X, y, copy=False):
     @param copy:
     @return:
     """
-    data_size = y.shape[0]
-
-    shuffle_indices = np.random.permutation(np.arange(data_size))
-    shuffled_y = y[shuffle_indices]
-    shuffled_tx = X[shuffle_indices]
-
-    if copy:
-        X_train = shuffled_tx.copy()
-        y_train = shuffled_y.copy()
-    else:
-        X_train = shuffled_tx
-        y_train = shuffled_y
-
-    assert X.shape == X_train.shape and y.shape == y_train.shape
-
-    return X_train, y_train
+    X_s, y_s = sklearn.utils.shuffle(X, y)
+    assert type(X_s) == type(X)
+    return X_s, y_s
 
 
 def batch_iter(y, X, batch_size, shuffle=False):

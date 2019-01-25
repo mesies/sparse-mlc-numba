@@ -28,7 +28,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
                  iterations=200,
                  grad_check=False,
                  batch_size=512,
-                 l_one=0.01,
+                 l_one=1,
                  optimiser=None):
 
         self.batch_size = batch_size
@@ -38,6 +38,10 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         self.w = {}
         self.lossHistory = np.zeros(iterations)
         self.l_one = l_one
+        self.optimiser = optimiser
+
+        self.noImproveTimes = 0
+
         if optimiser == "adam":
             self.d = 1e-8
             self.r1 = 0.9
@@ -50,8 +54,15 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
             self.L = np.array(self.learning_rate)
             self.updateFunc = self.adam
 
-        if optimiser == None:
+        if optimiser == None or optimiser == "default":
             self.updateFunc = self.default
+
+        if optimiser == "nesterov":
+            self.L = np.array(self.learning_rate)
+            self.alpha = 0.9
+            self.velocity = 1
+            self.av = self.alpha * self.velocity
+            self.updateFunc = self.momementum
 
 
     def adam(self, W, gradient):
@@ -69,7 +80,9 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         return W + velocity
 
     def momementum(self, W, gradient):
-        return None
+        self.av = self.alpha * self.velocity
+        self.velocity = (self.av) - (self.L * gradient)
+        return (W + self.velocity)
 
     def default(self, W, gradient):
         return W - self.learning_rate * gradient
@@ -133,6 +146,8 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
 
         grads = []
 
+        old_loss_ep = -1
+        old_loss_single = -1
 
         for epoch in range(0, epochs):
 
@@ -142,15 +157,25 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
 
             for batch_ind in shuffle_indices:
                 (sampleX, sampley) = batches[batch_ind]
-                #sampleX, sampley = helpers.shuffle_dataset(sampleX, sampley)
+                # sampleX, sampley = helpers.shuffle_dataset(sampleX, sampley)
 
                 loss = sparse_math_lib.logloss.log_likelihood_sp(X=sampleX, y=sampley, W=self.w)
-                # loss += (l_one * W.T.dot(W))
+                # loss += (l_one * self.w.T.dot(self.w))
                 assert loss is not np.nan
+
+                # if self.stopping_criterion(loss, old_loss_single, epoch):
+                #     old_loss_single = loss
+                #     break
+                #
+                old_loss_single = loss
 
                 epoch_loss.append(loss)
 
-                gradient = (sparse_math_lib.gradient.gradient_sp(X=sampleX, W=self.w, y=sampley))
+                if self.optimiser == "nesterov":
+                    gradient = (sparse_math_lib.gradient.gradient_sp(X=sampleX, W=(self.w + (self.av)), y=sampley))
+                else:
+                    gradient = (sparse_math_lib.gradient.gradient_sp(X=sampleX, W=self.w, y=sampley))
+
                 #gradient += l_one * self.w
                 assert gradient is not np.nan
 
@@ -167,14 +192,14 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
             self.lossHistory[epoch] = new_loss
 
             # Maybe needs tweaking
-            old_loss_ep = np.average(epoch_loss)
             if self.stopping_criterion(new_loss, old_loss_ep, epoch): break
+            old_loss_ep = np.average(epoch_loss)
 
         return self.w
 
     def stopping_criterion(self, loss, old_loss, epoch):
 
-        limit = 1e-3
+        limit = 1e-5
         improvement_limit_percent = 0.0001
         epoch_limit = 150
 
@@ -186,6 +211,8 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
 
         positive_improvemnt_rule = abs(loss - old_loss) <= limit
 
+        if (positive_improvemnt_rule): self.noImproveTimes +=1
+
         rules_and.append(positive_improvemnt_rule)
         rules_and.append(epoch_rule)
 
@@ -193,7 +220,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
         for rule in rules_and:
             stop = rule and stop
 
-        if (stop):
+        if (stop or self.noImproveTimes == 5):
             print "Stopping MLC-SGD at " + str(loss) + " " + str(old_loss) + " epoch " + str(epoch)
             return True
         return False
