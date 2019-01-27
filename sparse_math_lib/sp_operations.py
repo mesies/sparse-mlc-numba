@@ -3,7 +3,6 @@ import numpy as np
 from numba import prange
 from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
 
-from helpers.profile_support import profile
 
 """
 This file implements low-level functions written utilising the numba framework
@@ -144,7 +143,6 @@ def sum_of_vector_numba(result, x, sh):
     return result
 
 
-@profile
 def mult_col_raw_col_row_sum_raw(x, row_vector):
     """
     A combination of @col_row_sum_raw and @mult_mult_row_raw functions in order to save some
@@ -175,7 +173,8 @@ def mult_col_raw_col_row_sum_raw(x, row_vector):
         result_col,
         x.shape[0],
         x.shape[1])
-    return np.reshape(result, (1, result.shape[0]))
+
+    return np.reshape(result, (result.shape[0], 1))
 
 
 @numba.jit(['void(float64[:], float64[:], int32[:], int32[:], float64[:], int32[:], int32[:], int64, int64)',
@@ -290,10 +289,10 @@ def mult_row_matrix_numba(row_vector, x_indptr, x_indices, result_data, result_r
             h += 1
 
 
-@numba.jit('void(float64[:], float64[:,:], float64[:,:], int64, int64)',
-           nopython=True,
-           cache=True,
-           nogil=True)
+# @numba.jit(['void(float64[:], float64[:,:], float64[:,:], int64, int64)'],
+#            nopython=True,
+#            cache=True,
+#            nogil=True)
 def mult_col_matrix_numba(column_vector, matrix, result, dim0, dim1):
     """
     Optimised matrix element-wise multiplication when one matrix
@@ -314,6 +313,7 @@ def mult_col(x, col_vector):
         x_newSize = np.reshape(x, (x.shape[1]))
     else:
         x_newSize = np.reshape(x, (x.shape[0]))
+
     xw_hat = np.zeros(col_vector.shape)
     mult_col_matrix_numba(x_newSize, col_vector, xw_hat, col_vector.shape[0], col_vector.shape[1])
     return xw_hat

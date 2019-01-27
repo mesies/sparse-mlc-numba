@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.sparse
 
 import sp_operations as sp_op
 from sparse_math_lib.mathutil import sigmoid
@@ -39,11 +40,11 @@ def gradient_sp(X, W, y):
 
     # (sigm(XW) - y) * X,T
     # data, row, col = mult_row_raw(X, sdotp)
-    # result = col_row_sum_raw(data, row, col, X.shape[0], X.shape[1])
-    result = sp_op.mult_col_raw_col_row_sum_raw(X, sdotp)
-    assert result.shape[0] == W.shape[1]
 
-    return result.T
+    result = sp_op.mult_col_raw_col_row_sum_raw(X, sdotp)
+    assert result.shape[1] == W.shape[1]
+
+    return result
 
 
 def gradient(X, W, y):
@@ -54,6 +55,11 @@ def gradient(X, W, y):
            @param y: True Categories of the training examples X
            @return: Gradient
            """
+
+    if scipy.sparse.issparse(X) or scipy.sparse.issparse(W) or scipy.sparse.issparse(y):
+        print("WARN : Use gradient_sp for sparse matrices")
+        return gradient_sp(X, W, y)
+
     sig = (sigmoid(np.dot(X, W))).T - y
     assert sig.shape == y.shape
 

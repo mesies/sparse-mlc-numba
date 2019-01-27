@@ -10,7 +10,6 @@ from sklearn.externals import six
 import helpers
 import sparse_math_lib.gradient
 import sparse_math_lib.logloss
-from helpers.profile_support import profile
 from sparse_math_lib import mathutil
 
 # '@profile' is used by line_profiler but the python interpreter does not recognise the decorator so in order to edit
@@ -68,7 +67,7 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
     def adam(self, W, gradient):
         self.t += 1
         self.s = self.r1 * self.s + (1. - self.r1) * gradient
-        self.r = self.r2 * self.r + ((1. - self.r2) * gradient) * gradient
+        self.r = self.r2 * self.r + np.multiply(((1. - self.r2) * gradient), gradient)
 
         s_hat = self.s / (1. - (self.r1 ** self.t))
         r_hat = self.r / (1. - (self.r2 ** self.t))
@@ -87,7 +86,6 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
     def default(self, W, gradient):
         return W - self.learning_rate * gradient
 
-    @profile
     def fit(self, X, y):
         """
         Fits the classifier using X and y as training examples
@@ -116,7 +114,6 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
 
         return self
 
-    @profile
     def stochastic_gradient_descent_sparse(self, X, y):
         """
         ADAM Optimiser Implementation with custom stopping criterion
