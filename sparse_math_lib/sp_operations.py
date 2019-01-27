@@ -289,10 +289,10 @@ def mult_row_matrix_numba(row_vector, x_indptr, x_indices, result_data, result_r
             h += 1
 
 
-# @numba.jit(['void(float64[:], float64[:,:], float64[:,:], int64, int64)'],
-#            nopython=True,
-#            cache=True,
-#            nogil=True)
+@numba.jit(['void(float64[:], float64[:,:], float64[:,:], int64, int64)'],
+           nopython=True,
+           cache=True,
+           nogil=True)
 def mult_col_matrix_numba(column_vector, matrix, result, dim0, dim1):
     """
     Optimised matrix element-wise multiplication when one matrix

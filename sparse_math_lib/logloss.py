@@ -50,6 +50,49 @@ def log_likelihood_sp(X, W, y):
     return result
 
 
+def log_likelihood_sp_numba_wrapper(X, W, y):
+    xw = X.dot(W)
+    return log_likelihood_sp_numba(xw, y)
+
+
+# @numba.jit(['float64(float64[:,:], int64[:])',
+#             'float64(float64[:,:], int32[:])'],
+#            nopython=True,
+#            nogil=True,
+#            cache=True,
+#            fastmath=True
+#            )
+def log_likelihood_sp_numba(xw, y):
+    """
+    Log loss sparse optimised function.
+    @param X: Training examples
+    @param W: Weight vector
+    @param y: True Categories of the training examples X
+    @return: logarithmic loss
+    """
+    # -1 ^ y Ew = np.sum(t*np.log(s)+(1-t)*np.log(1-s))
+
+    # result = log_likelihood_numba(X,W,y)
+    # assert  result is not np.nan
+
+    # return result
+
+    signus = np.ones(y.shape)
+    if y.nnz != 0:
+        result_row, result_col = sp_op.nonzero(y)
+        signus[result_row] = -1
+
+    # (XW) * (-1 ^ y)
+
+    xw_hat = sp_op.mult_col(xw, signus)
+
+    logg = np.logaddexp(0, xw_hat)
+
+    result = np.sum(logg[:, None], axis=0)
+    assert result.shape[0] == 1
+
+    return result
+
 def log_likelihood_numba(X, W, y):
     # Ew = np.sum(t*np.log(s)+(1-t)*np.log(1-s))
     # sdotp is dense

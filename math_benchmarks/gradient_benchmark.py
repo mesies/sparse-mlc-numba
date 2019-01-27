@@ -52,15 +52,15 @@ for rows_n in rows:
     logloss = sparse_math_lib.logloss.log_likelihood_sp(X, W, y)
     times_logloss.append(helpers.toc(t2))
 
-    t3 = helpers.tic()
-    logloss2 = sparse_math_lib.logloss.log_likelihood_numba(X, W, y)
-    times_logloss2.append(helpers.toc(t3))
+    # t3 = helpers.tic()
+    # logloss2 = sparse_math_lib.logloss.log_likelihood_numba(X, W, y)
+    # times_logloss2.append(helpers.toc(t3))
 
     i += 1
 
 plt.plot(sizes, times_grad, label="MLC-SGD Mini-Batch Gradient")
 plt.plot(sizes, times_logloss, label="MLC-SGD Mini-Batch LogLoss")
-plt.plot(sizes, times_logloss2, label="MLC-SGD Mini-Batch LogLoss Numba")
+# plt.plot(sizes, times_logloss2, label="MLC-SGD Mini-Batch LogLoss Numba")
 plt.xlabel('Rows Size')
 plt.ylabel('Time')
 plt.legend()
