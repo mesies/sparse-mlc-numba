@@ -66,26 +66,27 @@ def nonzero(x):
 
 
 @numba.jit(['void(int64[:], int64[:], int32[:], int32[:], int64, int64)',
-            'void(int32[:], int32[:], int32[:], int32[:], int64, int64)'],
+            'void(int32[:], int32[:], int32[:], int32[:], int64, int64)'
+            ],
            nopython=True,
            nogil=True,
            cache=True,
            fastmath=True)
-def nonzero_numba(result_row, result_col, indices, indptr, columns, iscsr):
+def nonzero_numba(result_row, result_col, indices, indptr, x_shape_0, iscsr):
     """
     See nonzero
     @param result_row:
     @param result_col:
     @param indices:
     @param indptr:
-    @param columns:
+    @param x_shape_0:
     @param iscsr:
     @return:
     """
     # column indices for column i is in indices[indptr[i]:indptr[i+1]]
     if iscsr == 1:
         h = 0
-        for i in range(0, columns):
+        for i in range(0, x_shape_0):
             ind = indices[indptr[i]:indptr[i + 1]]
             for j in ind:
                 result_row[h] = i
@@ -93,7 +94,7 @@ def nonzero_numba(result_row, result_col, indices, indptr, columns, iscsr):
                 h += 1
     else:
         h = 0
-        for i in range(0, columns):
+        for i in range(0, x_shape_0):
             ind = indices[indptr[i]:indptr[i + 1]]
             for j in ind:
                 result_row[h] = j
@@ -293,30 +294,36 @@ def mult_row_matrix_numba(row_vector, x_indptr, x_indices, result_data, result_r
            nopython=True,
            cache=True,
            nogil=True)
-def mult_col_matrix_numba(column_vector, matrix, result, dim0, dim1):
+def mult_col_matrix_numba(column_vector_1d, matrix_2d, result_2d, dim0, dim1):
     """
     Optimised matrix element-wise multiplication when one matrix
-    @param column_vector:
-    @param matrix:
-    @param result:
+    @param column_vector_1d:
+    @param matrix_2d:
+    @param result_2d:
     @param dim0:
     @param dim1:
     @return:
     """
     for i in range(0, dim0):
         for j in range(0, dim1):
-            result[i, j] = column_vector[i] * matrix[i, j]
+            result_2d[i, j] = column_vector_1d[i] * matrix_2d[i, j]
 
 
-def mult_col(x, col_vector):
-    if x.shape[0] == 1:
-        x_newSize = np.reshape(x, (x.shape[1]))
+def mult_col(col_vector_1d, matrix_2d):
+    """
+
+    @param col_vector_1d:
+    @param matrix_2d:
+    @return:
+    """
+    if col_vector_1d.shape[0] == 1:
+        col_vector_1d_new_shape = np.reshape(col_vector_1d, (col_vector_1d.shape[1]))
     else:
-        x_newSize = np.reshape(x, (x.shape[0]))
+        col_vector_1d_new_shape = np.reshape(col_vector_1d, (col_vector_1d.shape[0]))
 
-    xw_hat = np.zeros(col_vector.shape)
-    mult_col_matrix_numba(x_newSize, col_vector, xw_hat, col_vector.shape[0], col_vector.shape[1])
-    return xw_hat
+    result_2d = np.zeros(matrix_2d.shape)
+    mult_col_matrix_numba(col_vector_1d_new_shape, matrix_2d, result_2d, matrix_2d.shape[0], matrix_2d.shape[1])
+    return result_2d
 
 
 def coo_row_sum(A):

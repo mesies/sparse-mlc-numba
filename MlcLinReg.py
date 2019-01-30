@@ -180,11 +180,6 @@ class MlcLinReg(six.with_metaclass(ABCMeta, BaseEstimator, ClassifierMixin)):
 
                 self.w = self.updateFunc(self.w, gradient)
 
-                # print("Ending epoch {},  loss -> {} velocity -> {}".format(
-                #     t,
-                #     loss,
-                #     np.average(velocity)))
-
             new_loss = np.average(epoch_loss)
             self.lossHistory[epoch] = new_loss
 

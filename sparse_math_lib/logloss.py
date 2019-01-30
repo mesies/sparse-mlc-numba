@@ -19,6 +19,13 @@ Log loss implementation.
 
 # Optimised
 def log_likelihood_sp(X, W, y):
+    result = log_likelihood_sp_numba_wrapper(X, W, y)
+    assert result is not np.nan
+
+    return result
+
+
+def log_likelihood_sp_old(X, W, y):
     """
     Log loss sparse optimised function.
     @param X: Training examples
@@ -27,11 +34,6 @@ def log_likelihood_sp(X, W, y):
     @return: logarithmic loss
     """
     # -1 ^ y Ew = np.sum(t*np.log(s)+(1-t)*np.log(1-s))
-
-    # result = log_likelihood_numba(X,W,y)
-    # assert  result is not np.nan
-
-    # return result
 
     signus = np.ones(y.shape)
     if y.nnz != 0:
@@ -52,17 +54,23 @@ def log_likelihood_sp(X, W, y):
 
 def log_likelihood_sp_numba_wrapper(X, W, y):
     xw = X.dot(W)
-    return log_likelihood_sp_numba(xw, y)
+
+    signus = np.ones(y.shape, dtype=float).flatten()
+
+    xw_hat = np.zeros((xw.shape), dtype=float)
+
+    return log_likelihood_sp_numba(xw, xw_hat, y.indices, y.indptr, np.max(y.shape), y.data.shape[0], signus)
 
 
-# @numba.jit(['float64(float64[:,:], int64[:])',
-#             'float64(float64[:,:], int32[:])'],
-#            nopython=True,
-#            nogil=True,
-#            cache=True,
-#            fastmath=True
-#            )
-def log_likelihood_sp_numba(xw, y):
+@numba.jit(['float64(float64[:,:], float64[:,:], int32[:], int32[:], int64, int64, float64[:])',
+            'float64(float64[:,:], float64[:,:], int32[:], int32[:], int64, int64, float64[:])'
+            ],
+           nopython=True,
+           nogil=True,
+           cache=True,
+           fastmath=True
+           )
+def log_likelihood_sp_numba(xw_2d, xw_hat, y_ind_1d, y_indptr_1d, y_shape_2d, y_data_size_1d, signus_1d):
     """
     Log loss sparse optimised function.
     @param X: Training examples
@@ -70,26 +78,25 @@ def log_likelihood_sp_numba(xw, y):
     @param y: True Categories of the training examples X
     @return: logarithmic loss
     """
-    # -1 ^ y Ew = np.sum(t*np.log(s)+(1-t)*np.log(1-s))
 
-    # result = log_likelihood_numba(X,W,y)
-    # assert  result is not np.nan
+    result_indrow_1d = np.zeros((y_data_size_1d), dtype=np.int64)
+    result_indcol_1d = np.zeros((y_data_size_1d), dtype=np.int64)
 
-    # return result
+    sp_op.nonzero_numba(result_indrow_1d, result_indcol_1d, y_ind_1d, y_indptr_1d, y_shape_2d,
+                        np.ones((1), dtype=np.int64)[0])
 
-    signus = np.ones(y.shape)
-    if y.nnz != 0:
-        result_row, result_col = sp_op.nonzero(y)
-        signus[result_row] = -1
+    signus_1d[result_indrow_1d] = -1
 
-    # (XW) * (-1 ^ y)
+    ########################
 
-    xw_hat = sp_op.mult_col(xw, signus)
+    sp_op.mult_col_matrix_numba(signus_1d, xw_2d, xw_hat, xw_2d.shape[0], xw_2d.shape[1])
+
+    # xw_hat = sp_op.mult_col(xw, signus)
+    ##############################
 
     logg = np.logaddexp(0, xw_hat)
 
-    result = np.sum(logg[:, None], axis=0)
-    assert result.shape[0] == 1
+    result = np.sum(logg)
 
     return result
 
