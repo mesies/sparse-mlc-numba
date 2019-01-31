@@ -3,7 +3,6 @@ import numpy as np
 from numba import prange
 from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
 
-
 """
 This file implements low-level functions written utilising the numba framework
 ,in order to improve speed when input is sparse.

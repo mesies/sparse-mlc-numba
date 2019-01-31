@@ -45,11 +45,11 @@ for rows_n in rows:
     W = (np.random.uniform(size=(X.shape[1], 1)))
 
     t = helpers.tic()
-    grad = sparse_math_lib.gradient.gradient_sp(X, W, y)
+    grad = sparse_math_lib.gradient.gradient_sp(X, W, y[:, 0])
     times_grad.append(helpers.toc(t))
 
     t2 = helpers.tic()
-    logloss = sparse_math_lib.logloss.log_likelihood_sp(X, W, y)
+    logloss = sparse_math_lib.logloss.log_likelihood_sp(X, W, y[:, 0])
     times_logloss.append(helpers.toc(t2))
 
     # t3 = helpers.tic()
